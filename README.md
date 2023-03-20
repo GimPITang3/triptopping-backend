@@ -1,3 +1,14 @@
+# triptopping-backend
+
+## Environment Settings
+
+```
+MONGODB_URI=mongodb+srv://...
+
+JWT_ACCESS_SECRET=secret
+JWT_ACCESS_EXPIRES_AT=30d
+```
+
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
 </p>
