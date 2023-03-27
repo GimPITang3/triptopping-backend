@@ -7,6 +7,10 @@ MONGODB_URI=mongodb+srv://...
 
 JWT_ACCESS_SECRET=secret
 JWT_ACCESS_EXPIRES_AT=30d
+
+GOOGLE_CLIENT_ID=...
+GOOGLE_SECRET=...
+GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
 ```
 
 <p align="center">
