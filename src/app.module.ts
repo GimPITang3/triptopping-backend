@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { PlansModule } from './plans/plans.module';
 
 import { LoggerMiddleware } from './middlewares/logger.middleware';
 
@@ -24,6 +25,7 @@ import { LoggerMiddleware } from './middlewares/logger.middleware';
     }),
     AuthModule,
     UsersModule,
+    PlansModule,
   ],
   controllers: [AppController],
   providers: [AppService],
