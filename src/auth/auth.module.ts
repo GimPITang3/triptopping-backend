@@ -1,14 +1,16 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 
 import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
 import { GoogleOAuth20Strategy } from './stratagies/google-oauth-20.strategy';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtStrategy } from './stratagies/jwt.strategy';
+
+import { AuthController } from './auth.controller';
 
 @Module({
   imports: [ConfigModule, JwtModule.register({})],
-  providers: [AuthService, GoogleOAuth20Strategy],
+  providers: [AuthService, JwtStrategy, GoogleOAuth20Strategy],
   controllers: [AuthController],
   exports: [],
 })
