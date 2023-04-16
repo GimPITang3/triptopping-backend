@@ -1,23 +1,29 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
 
 export type UserDocument = HydratedDocument<User>;
 
+@Schema()
+class GoogleProvider {
+  @Prop({ required: true, unique: true })
+  id: string;
+}
+
+const GoogleProviderSchema = SchemaFactory.createForClass(GoogleProvider);
+
 @Schema({ timestamps: true })
 export class User {
-  _id: MongooseSchema.Types.ObjectId;
-
-  @Prop()
+  @Prop({ required: true, unique: true })
   userId: string;
 
   @Prop()
   nickname: string;
 
-  @Prop()
+  @Prop({ unique: true })
   email: string;
 
-  @Prop()
-  loginMethod: string;
+  @Prop({ type: GoogleProviderSchema })
+  google: GoogleProvider;
 
   @Prop()
   createdAt: Date;

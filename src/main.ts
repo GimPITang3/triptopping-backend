@@ -6,12 +6,14 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const port = 3001;
+
   // Pipes
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   // Interceptors
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
-  await app.listen(3000);
+  await app.listen(port);
 }
 bootstrap();

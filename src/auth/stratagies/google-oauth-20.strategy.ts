@@ -33,7 +33,6 @@ export class GoogleOAuth20Strategy
   async validate(
     accessToken: string,
     refreshToken: string,
-    results: any,
     profile: Profile,
     _verified: VerifyCallback,
   ): Promise<IOAuthUser> {

@@ -1,5 +1,5 @@
-import { Request } from 'express';
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Request, Response } from 'express';
+import { Controller, Get, Logger, Req, Res, UseGuards } from '@nestjs/common';
 // Req is just an alias for Request in @nestjs/common due to the existance of Request of express.
 
 import { GoogleOAuth20Guard } from './guards/google-oauth-20.guard';
@@ -8,6 +8,8 @@ import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(private readonly authService: AuthService) {}
 
   @Get('google')
@@ -19,11 +21,19 @@ export class AuthController {
 
   @Get('google/callback')
   @UseGuards(GoogleOAuth20Guard)
-  async loginGoogleCallback(@Req() request: Request & IOAuthUser) {
-    const { accessToken } = await this.authService.loginWithGoogle(request);
+  async loginGoogleCallback(
+    @Req() request: Request & { user: IOAuthUser },
+    @Res() response: Response,
+  ) {
+    const { accessToken, user } = await this.authService.loginWithGoogle(
+      request,
+    );
+
+    console.log(user.toObject());
 
     return {
       accessToken,
+      user: user.toObject(),
     };
   }
 }
