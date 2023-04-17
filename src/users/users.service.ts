@@ -32,7 +32,7 @@ export class UsersService {
   }
 
   async findByGoogleId(id: string): Promise<UserDocument> {
-    const user = await this.userModel.findOne({ google: { id } }).exec();
+    const user = await this.userModel.findOne({ 'google.id': id }).exec();
 
     if (!user) {
       throw new UserNotFoundError();
