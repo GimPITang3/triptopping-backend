@@ -14,12 +14,10 @@ import {
 import { IVerifyCallback } from '../verify-callback.interface';
 import { JwtPayload } from 'src/auth/jwt-payload.interface';
 
-export const STRATEGY_NAME = 'jwt';
+import { UsersService } from 'src/users/users.service';
+import { User } from 'src/users/user.schema';
 
-export interface IJwtUser {
-  // TODO:
-  something?: any;
-}
+export const STRATEGY_NAME = 'jwt';
 
 const JwtFromCookie = (key: string) => {
   return (req: Request) => {
@@ -33,7 +31,10 @@ export class JwtStrategy
   extends PassportStrategy(Strategy, STRATEGY_NAME)
   implements IVerifyCallback<VerifyCallback>
 {
-  constructor(configService: ConfigService) {
+  constructor(
+    private readonly usersService: UsersService,
+    configService: ConfigService,
+  ) {
     super(<StrategyOptions>{
       jwtFromRequest: ExtractJwt.fromExtractors([
         ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -44,11 +45,9 @@ export class JwtStrategy
     });
   }
 
-  async validate(
-    _payload: JwtPayload,
-    _done: VerifiedCallback,
-  ): Promise<IJwtUser> {
-    // TODO:
-    return {};
+  async validate(payload: JwtPayload, _done: VerifiedCallback): Promise<User> {
+    const user = await this.usersService.findByUserId(payload.userId);
+
+    return user;
   }
 }
