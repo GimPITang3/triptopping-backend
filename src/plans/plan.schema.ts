@@ -7,6 +7,9 @@ export type PlanDocument = HydratedDocument<Plan>;
 
 @Schema({ timestamps: true })
 export class Plan {
+  @Prop({ required: true, unique: true })
+  planId: string;
+
   @Prop({ required: true })
   name: string;
 
@@ -14,10 +17,31 @@ export class Plan {
   author: User;
 
   @Prop()
+  members: any[];
+
+  @Prop()
+  startDate?: Date;
+
+  @Prop({ required: true })
+  period: number;
+
+  @Prop()
+  budget: number;
+
+  @Prop()
+  tags: string[];
+
+  @Prop()
+  itineraries: any[];
+
+  @Prop()
   createdAt: Date;
 
   @Prop()
   updatedAt: Date;
+
+  @Prop()
+  deletedAt: Date;
 }
 
 export const PlanSchema = SchemaFactory.createForClass(Plan);
