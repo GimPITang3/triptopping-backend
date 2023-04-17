@@ -8,6 +8,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { PlansModule } from './plans/plans.module';
+import { ArticlesModule } from './articles/articles.module';
 
 import { LoggerMiddleware } from './middlewares/logger.middleware';
 
@@ -26,6 +27,7 @@ import { LoggerMiddleware } from './middlewares/logger.middleware';
     AuthModule,
     UsersModule,
     PlansModule,
+    ArticlesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

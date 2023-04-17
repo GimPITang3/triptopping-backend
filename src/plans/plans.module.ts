@@ -12,6 +12,6 @@ import { PlansController } from './plans.controller';
   ],
   providers: [PlansService],
   controllers: [PlansController],
-  exports: [],
+  exports: [PlansService],
 })
 export class PlansModule {}
