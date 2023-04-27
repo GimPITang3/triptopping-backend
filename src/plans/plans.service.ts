@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 import { createId } from '@paralleldrive/cuid2';
 
-import { Plan, PlanDocument } from './plan.schema';
 import { CreatePlanDto } from './dto/create-plan.dto';
+import { Plan, PlanDocument } from './plan.schema';
 
 export class PlanNotFoundError extends Error {
   constructor() {
@@ -32,11 +32,18 @@ export class PlansService {
   async create(createPlanDto: CreatePlanDto): Promise<PlanDocument> {
     const plan = new this.plansModel(createPlanDto);
     plan.planId = createId();
+    plan.status = 'normal';
     plan.itineraries = [];
-    // TODO:
-    plan.author = null;
 
-    // TODO:
+    plan.name = createPlanDto.name;
+    plan.author = new Types.ObjectId(createPlanDto.author);
+    plan.numberOfMembers = createPlanDto.numberOfMembers;
+    plan.members = createPlanDto.members;
+    plan.budget = createPlanDto.budget;
+    plan.tags = createPlanDto.tags;
+
+    plan.period = createPlanDto.period;
+    if (createPlanDto.startDate) plan.startDate = createPlanDto.startDate;
 
     await plan.save();
 

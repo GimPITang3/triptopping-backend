@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
+import { HydratedDocument, Schema as MongooseSchema, Types } from 'mongoose';
 
 import { User } from 'src/users/user.schema';
 
@@ -13,8 +13,14 @@ export class Plan {
   @Prop({ required: true })
   name: string;
 
+  @Prop({ required: true })
+  status: string;
+
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: User.name, required: true })
-  author: User;
+  author: Types.ObjectId;
+
+  @Prop()
+  numberOfMembers: number;
 
   @Prop()
   members: any[];
