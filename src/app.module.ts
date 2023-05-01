@@ -5,10 +5,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 import { MongooseModule } from '@nestjs/mongoose';
-import { UsersModule } from './users/users.module';
+import { ArticlesModule } from './articles/articles.module';
 import { AuthModule } from './auth/auth.module';
 import { PlansModule } from './plans/plans.module';
-import { ArticlesModule } from './articles/articles.module';
+import { ScheduleRecommendModule } from './schedule-recommend/schedule-recommend.module';
+import { UsersModule } from './users/users.module';
 
 import { LoggerMiddleware } from './middlewares/logger.middleware';
 
@@ -28,6 +29,7 @@ import { LoggerMiddleware } from './middlewares/logger.middleware';
     UsersModule,
     PlansModule,
     ArticlesModule,
+    ScheduleRecommendModule,
   ],
   controllers: [AppController],
   providers: [AppService],
