@@ -31,7 +31,7 @@ describe('Google Maps', () => {
     expect(key).toBeDefined();
   });
 
-  it('Find place from text', async () => {
+  it('should find place from text', async () => {
     const result = await client.findPlaceFromText({
       params: {
         input: '광화문',
@@ -41,16 +41,51 @@ describe('Google Maps', () => {
     });
 
     expect(result.data.candidates.length).toBeGreaterThanOrEqual(1);
+  });
 
-    for (const candidate of result.data.candidates) {
-      const details = await client.placeDetails({
-        params: {
-          place_id: candidate.place_id,
-          key,
+  it('should get detail of a place', async () => {
+    const placeId = 'ChIJrUQcQuuifDUR-IWAEQylVek';
+    const details = await client.placeDetails({
+      params: {
+        place_id: placeId,
+        key,
+      },
+      timeout: 1000,
+    });
+
+    expect(details.data.result.place_id).toBeDefined();
+  });
+
+  it('should get image', async () => {
+    const photoreference =
+      'AZose0mnmeAtlDxGkDTQwUItsIYovHstwsjPza5V93qohVcCC9Ie-zDOz4ryLV3_zDFRsdIHU3AQPVKlqIfWtyhAegI-LIR4Z2F04_1pW-EK3EooZzZxc9j30JXhhUq63fnPY33kQsNpjldmwjLjchbIkrUZ0kagljeVq0gil0B9gwWEOhaB';
+
+    const photo = await client.placePhoto({
+      params: {
+        photoreference,
+        maxheight: 1024,
+        maxwidth: 1024,
+        key,
+      },
+      responseType: 'arraybuffer',
+    });
+
+    expect(photo.data).toBeInstanceOf(Buffer);
+  });
+
+  it('should fine near-by places', async () => {
+    const near = await client.placesNearby({
+      params: {
+        location: {
+          lat: 37.5721418,
+          lng: 126.9772436,
         },
-      });
+        radius: 200,
+        type: 'cafe',
+        key,
+      },
+    });
 
-      expect(details.data.result.place_id).toBeDefined();
-    }
+    expect(near.data.results.length).toBeGreaterThanOrEqual(1);
   });
 });
