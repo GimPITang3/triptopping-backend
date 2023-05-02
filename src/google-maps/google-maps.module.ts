@@ -18,6 +18,12 @@ export const GOOGLE_MAPS_ACCESS_KEY_TOKEN = 'GOOGLE_MAPS_ACCESS_KEY_TOKEN';
       useFactory: async (configService: ConfigService) => {
         const key = configService.get<string>('GOOGLE_MAPS_ACCESS_KEY');
 
+        if (typeof key !== 'string') {
+          throw new Error(
+            'Google Maps access key is not provided via environment variables.',
+          );
+        }
+
         return key;
       },
       inject: [ConfigService],
