@@ -81,6 +81,9 @@
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^src/(.*)$": "<rootDir>/$1"
-    }
+    },
+    "setupFiles": [
+      "dotenv/config"
+    ]
   }
 }
