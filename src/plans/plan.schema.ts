@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
+import { HydratedDocument, Schema as MongooseSchema, Types } from 'mongoose';
 import { PlaceData } from '@googlemaps/google-maps-services-js';
+import { Type } from '@nestjs/common';
 
 export type PlanDocument = HydratedDocument<Plan>;
 
@@ -50,13 +51,13 @@ export class Plan {
   status: string;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
-  author: string;
+  author: Types.ObjectId;
 
   @Prop()
   numberOfMembers: number;
 
   @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }] })
-  members: string[];
+  members: Types.ObjectId[];
 
   @Prop()
   startDate?: Date;

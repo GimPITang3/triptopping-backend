@@ -7,6 +7,7 @@ import { createId } from '@paralleldrive/cuid2';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
 import { Plan, PlanDocument } from './plan.schema';
+import { Type } from 'class-transformer';
 
 export class PlanNotFoundError extends Error {
   constructor() {
@@ -37,7 +38,7 @@ export class PlansService {
     plan.itineraries = [];
 
     plan.name = createPlanDto.name;
-    plan.author = createPlanDto.author;
+    plan.author = new Types.ObjectId(createPlanDto.author);
     plan.numberOfMembers = createPlanDto.numberOfMembers;
     plan.budget = createPlanDto.budget;
     plan.tags = createPlanDto.tags;
@@ -64,7 +65,8 @@ export class PlansService {
 
     plan.name = updatePlanDto.name;
     plan.numberOfMembers = updatePlanDto.numberOfMembers;
-    plan.members = updatePlanDto.members;
+
+    plan.members = updatePlanDto.members.map((e) => {return new Types.ObjectId(e)});
     plan.budget = updatePlanDto.budget;
     plan.tags = updatePlanDto.tags;
 
