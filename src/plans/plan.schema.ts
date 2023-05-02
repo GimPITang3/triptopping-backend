@@ -1,9 +1,42 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Schema as MongooseSchema, Types } from 'mongoose';
-
-import { User, UserSchema } from 'src/users/user.schema';
+import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
+import { PlaceData } from '@googlemaps/google-maps-services-js';
 
 export type PlanDocument = HydratedDocument<Plan>;
+
+interface Place {
+  type: 'place';
+
+  time: Date;
+  duration: number;
+  cost: number;
+
+  details: Partial<PlaceData>;
+}
+
+interface Transport {
+  type: 'transport';
+
+  time: Date;
+  duration: number;
+  cost: number;
+}
+
+type ItineraryType = Place | Transport;
+
+type Itinerary<T> = T extends { type: string }
+  ? {
+      type: T['type'];
+      system?: Partial<Omit<T, 'type'>>;
+      manual?: Partial<Omit<T, 'type'>>;
+    }
+  : never;
+
+type ItinerarySlot = Itinerary<ItineraryType>;
+
+type ItinerariesDay = ItinerarySlot[];
+
+type Itineraries = ItinerariesDay[];
 
 @Schema({ timestamps: true })
 export class Plan {
@@ -38,7 +71,7 @@ export class Plan {
   tags: string[];
 
   @Prop()
-  itineraries: any[];
+  itineraries: Itineraries;
 
   @Prop()
   createdAt: Date;
@@ -47,7 +80,7 @@ export class Plan {
   updatedAt: Date;
 
   @Prop()
-  deletedAt: Date;
+  deletedAt?: Date;
 }
 
 export const PlanSchema = SchemaFactory.createForClass(Plan);
