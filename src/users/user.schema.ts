@@ -14,6 +14,7 @@ const GoogleProviderSchema = SchemaFactory.createForClass(GoogleProvider);
 @Schema({ timestamps: true })
 export class User {
   @Prop({ required: true, unique: true })
+  /** DB independent ID of user, auto-generated. */
   userId: string;
 
   @Prop()
