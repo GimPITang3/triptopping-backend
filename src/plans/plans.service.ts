@@ -5,6 +5,7 @@ import { Model, Types } from 'mongoose';
 import { createId } from '@paralleldrive/cuid2';
 
 import { CreatePlanDto } from './dto/create-plan.dto';
+import { UpdatePlanDto } from './dto/update-plan.dto';
 import { Plan, PlanDocument } from './plan.schema';
 
 export class PlanNotFoundError extends Error {
@@ -22,7 +23,7 @@ export class PlansService {
   async findById(planId: string): Promise<PlanDocument> {
     const plan = await this.plansModel.findOne({ planId }).exec();
 
-    if (!plan) {
+    if (!plan || plan.status === 'deleted') {
       throw new PlanNotFoundError();
     }
 
@@ -36,9 +37,8 @@ export class PlansService {
     plan.itineraries = [];
 
     plan.name = createPlanDto.name;
-    plan.author = new Types.ObjectId(createPlanDto.author);
+    plan.author = createPlanDto.author;
     plan.numberOfMembers = createPlanDto.numberOfMembers;
-    plan.members = createPlanDto.members;
     plan.budget = createPlanDto.budget;
     plan.tags = createPlanDto.tags;
 
@@ -50,23 +50,37 @@ export class PlansService {
     return plan;
   }
 
-  async update(planId: string) {
-    const plan = await this.plansModel.findOne({ planId }).exec();
+  async update(updatePlanDto: UpdatePlanDto): Promise<PlanDocument> {
+    const planId = updatePlanDto.planId;
+    const plan = await this.plansModel.findOne( { planId }).exec();
 
-    if (!plan) {
+    if (!plan || plan.status === 'deleted') {
       throw new PlanNotFoundError();
     }
 
     // TODO:
 
-    return;
+    plan.itineraries = [];
+
+    plan.name = updatePlanDto.name;
+    plan.numberOfMembers = updatePlanDto.numberOfMembers;
+    plan.members = updatePlanDto.members;
+    plan.budget = updatePlanDto.budget;
+    plan.tags = updatePlanDto.tags;
+
+    plan.period = updatePlanDto.period;
+    if (updatePlanDto.startDate) plan.startDate = updatePlanDto.startDate;
+
+    return plan;
   }
 
   async delete(planId: string) {
-    const result = await this.plansModel.deleteOne({ planId }).exec();
+    const plan = await this.plansModel.findOne( { planId }).exec();
 
-    if (!result.acknowledged) {
-      throw new Error('Delete plan was not acknowledge.');
+    plan.status = 'deleted';
+
+    if (!plan || plan.status === 'deleted') {
+      throw new PlanNotFoundError();
     }
   }
 }

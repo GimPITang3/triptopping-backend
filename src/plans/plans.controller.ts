@@ -11,6 +11,7 @@ import {
 
 import { PlansService } from './plans.service';
 import { CreatePlanDto } from './dto/create-plan.dto';
+import { UpdatePlanDto } from './dto/update-plan.dto';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 
 @Controller('plans')
@@ -34,11 +35,11 @@ export class PlansController {
 
   @UseGuards(JwtGuard)
   @Patch(':id')
-  async update(@Param('id') id: string) {
+  async update(@Body() updatePlanDto: UpdatePlanDto) {
     // TODO:
-    await this.plansService.update(id);
+    const plan = await this.plansService.update(updatePlanDto);
 
-    return;
+    return plan;
   }
 
   @UseGuards(JwtGuard)

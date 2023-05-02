@@ -1,14 +1,17 @@
 import { IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
 
-export class CreatePlanDto {
+export class UpdatePlanDto {
+  @IsString()
+  planId: string;
+
   @IsString()
   name: string;
 
-  @IsString()
-  author: string;
-
   @IsNumber()
   numberOfMembers: number;
+
+  @IsString({ each: true })
+  members: string[];
 
   @IsNumber()
   budget: number;

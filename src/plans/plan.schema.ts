@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Schema as MongooseSchema, Types } from 'mongoose';
 
-import { User } from 'src/users/user.schema';
+import { User, UserSchema } from 'src/users/user.schema';
 
 export type PlanDocument = HydratedDocument<Plan>;
 
@@ -16,14 +16,14 @@ export class Plan {
   @Prop({ required: true })
   status: string;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: User.name, required: true })
-  author: Types.ObjectId;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
+  author: string;
 
   @Prop()
   numberOfMembers: number;
 
-  @Prop()
-  members: any[];
+  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }] })
+  members: string[];
 
   @Prop()
   startDate?: Date;
