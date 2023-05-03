@@ -3,10 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 
 import { Client, PlaceInputType } from '@googlemaps/google-maps-services-js';
 
-import {
-  GOOGLE_MAPS_ACCESS_KEY_TOKEN,
-  GoogleMapsModule,
-} from './google-maps.module';
+import { GoogleMapsModule } from './google-maps.module';
+import { GOOGLE_MAPS_ACCESS_KEY_TOKEN } from './google-maps.constants';
 
 describe('Google Maps', () => {
   let client: Client;

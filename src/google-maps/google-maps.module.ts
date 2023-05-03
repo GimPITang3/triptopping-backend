@@ -2,8 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { Client } from '@googlemaps/google-maps-services-js';
-
-export const GOOGLE_MAPS_ACCESS_KEY_TOKEN = 'GOOGLE_MAPS_ACCESS_KEY_TOKEN';
+import { GOOGLE_MAPS_ACCESS_KEY_TOKEN } from './google-maps.constants';
 
 @Module({
   imports: [ConfigModule],
