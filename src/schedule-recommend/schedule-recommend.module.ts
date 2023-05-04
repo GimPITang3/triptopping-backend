@@ -1,7 +1,13 @@
 import { Module } from '@nestjs/common';
+
+import { GoogleMapsModule } from 'src/google-maps/google-maps.module';
+
 import { ScheduleRecommendService } from './schedule-recommend.service';
 
 @Module({
-  providers: [ScheduleRecommendService]
+  imports: [GoogleMapsModule],
+  controllers: [],
+  providers: [ScheduleRecommendService],
+  exports: [ScheduleRecommendService],
 })
-export class ScheduleRecommendModule { }
+export class ScheduleRecommendModule {}

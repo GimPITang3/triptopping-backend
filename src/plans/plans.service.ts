@@ -7,7 +7,6 @@ import { createId } from '@paralleldrive/cuid2';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
 import { Plan, PlanDocument } from './plan.schema';
-import { Type } from 'class-transformer';
 
 export class PlanNotFoundError extends Error {
   constructor() {
@@ -24,7 +23,7 @@ export class PlansService {
   async findById(planId: string): Promise<PlanDocument> {
     const plan = await this.plansModel.findOne({ planId }).exec();
 
-    if (!plan || plan.status === 'deleted') {
+    if (!plan || plan.deletedAt !== undefined) {
       throw new PlanNotFoundError();
     }
 
@@ -34,8 +33,7 @@ export class PlansService {
   async create(createPlanDto: CreatePlanDto): Promise<PlanDocument> {
     const plan = new this.plansModel(createPlanDto);
     plan.planId = createId();
-    plan.status = 'normal';
-    plan.itineraries = [];
+    plan.itinerary = [];
 
     plan.name = createPlanDto.name;
     plan.author = new Types.ObjectId(createPlanDto.author);
@@ -53,20 +51,22 @@ export class PlansService {
 
   async update(updatePlanDto: UpdatePlanDto): Promise<PlanDocument> {
     const planId = updatePlanDto.planId;
-    const plan = await this.plansModel.findOne( { planId }).exec();
+    const plan = await this.plansModel.findOne({ planId }).exec();
 
-    if (!plan || plan.status === 'deleted') {
+    if (!plan || plan.deletedAt !== undefined) {
       throw new PlanNotFoundError();
     }
 
     // TODO:
 
-    plan.itineraries = [];
+    plan.itinerary = [];
 
     plan.name = updatePlanDto.name;
     plan.numberOfMembers = updatePlanDto.numberOfMembers;
 
-    plan.members = updatePlanDto.members.map((e) => {return new Types.ObjectId(e)});
+    plan.members = updatePlanDto.members.map((e) => {
+      return new Types.ObjectId(e);
+    });
     plan.budget = updatePlanDto.budget;
     plan.tags = updatePlanDto.tags;
 
@@ -77,12 +77,12 @@ export class PlansService {
   }
 
   async delete(planId: string) {
-    const plan = await this.plansModel.findOne( { planId }).exec();
+    const plan = await this.plansModel.findOne({ planId }).exec();
 
-    plan.status = 'deleted';
-
-    if (!plan || plan.status === 'deleted') {
+    if (!plan || plan.deletedAt !== undefined) {
       throw new PlanNotFoundError();
     }
+
+    // TODO:
   }
 }

@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 
@@ -40,6 +41,12 @@ export class PlansController {
     const plan = await this.plansService.update(updatePlanDto);
 
     return plan;
+  }
+
+  @UseGuards(JwtGuard)
+  @Put(':id')
+  async replace(@Body() replacePlanDto: any) {
+    return;
   }
 
   @UseGuards(JwtGuard)
