@@ -29,7 +29,7 @@ export class PlansController {
   async create(@Body() createPlanDto: CreatePlanDto) {
     const plan = await this.plansService.create(createPlanDto);
 
-    return plan;
+    return plan.toObject();
   }
 
   // @UseGuards(JwtGuard)
@@ -38,7 +38,7 @@ export class PlansController {
     // TODO:
     const plan = await this.plansService.update(updatePlanDto);
 
-    return plan;
+    return plan.toObject();
   }
 
   // @UseGuards(JwtGuard)
