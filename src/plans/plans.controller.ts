@@ -17,6 +17,14 @@ import { PlansService } from './plans.service';
 export class PlansController {
   constructor(private plansService: PlansService) {}
 
+  // 지워지지 않은 모든 plan을 반환한다.
+  //! 테스트용 API
+  @Get()
+  async findAll() {
+    const plans = await this.plansService.findAll();
+    return plans.map((plan) => plan.toObject());
+  }
+
   @Get(':id')
   async findById(@Param('id') id: string) {
     const plan = await this.plansService.findById(id);

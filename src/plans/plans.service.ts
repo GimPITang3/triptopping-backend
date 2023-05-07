@@ -20,6 +20,11 @@ export class PlansService {
     @InjectModel(Plan.name) private readonly plansModel: Model<PlanDocument>,
   ) {}
 
+  async findAll(): Promise<PlanDocument[]> {
+    const plans = await this.plansModel.find({ deletedAt: undefined }).exec();
+    return plans;
+  }
+
   async findById(planId: string): Promise<PlanDocument> {
     const plan = await this.plansModel.findOne({ planId }).exec();
 
