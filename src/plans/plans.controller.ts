@@ -7,13 +7,11 @@ import {
   Patch,
   Post,
   Put,
-  UseGuards,
 } from '@nestjs/common';
 
-import { PlansService } from './plans.service';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
-import { JwtGuard } from 'src/auth/guards/jwt.guard';
+import { PlansService } from './plans.service';
 
 @Controller('plans')
 export class PlansController {
@@ -26,7 +24,7 @@ export class PlansController {
     return plan.toObject();
   }
 
-  @UseGuards(JwtGuard)
+  // @UseGuards(JwtGuard)
   @Post()
   async create(@Body() createPlanDto: CreatePlanDto) {
     const plan = await this.plansService.create(createPlanDto);
@@ -34,7 +32,7 @@ export class PlansController {
     return plan;
   }
 
-  @UseGuards(JwtGuard)
+  // @UseGuards(JwtGuard)
   @Patch(':id')
   async update(@Body() updatePlanDto: UpdatePlanDto) {
     // TODO:
@@ -43,13 +41,13 @@ export class PlansController {
     return plan;
   }
 
-  @UseGuards(JwtGuard)
+  // @UseGuards(JwtGuard)
   @Put(':id')
   async replace(@Body() replacePlanDto: any) {
     return;
   }
 
-  @UseGuards(JwtGuard)
+  // @UseGuards(JwtGuard)
   @Delete(':id')
   async delete(@Param('id') id: string) {
     await this.plansService.delete(id);
