@@ -3,6 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   AddressType,
   Client,
+  Language,
   PlaceData,
   Status,
 } from '@googlemaps/google-maps-services-js';
@@ -13,18 +14,18 @@ import {
   ItineraryDaily,
   Place,
 } from 'src/plans/interfaces/itinerary.interface';
+import { Needs } from './interfaces/needs.interface';
 
-import haversineDistance from 'haversine-distance';
+import * as haversineDistance from 'haversine-distance';
+import { Duration } from 'luxon';
 
 interface LatLng {
   lat: number;
   lng: number;
 }
 
-/** */
-interface Needs {
-  hunger: number;
-  stamina: number;
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 @Injectable()
@@ -50,59 +51,125 @@ export class ScheduleRecommendService {
       lat: (startLatLng.lat + endLatLng.lat) / 2,
       lng: (endLatLng.lng + endLatLng.lng) / 2,
     };
-    const diameter = haversineDistance(startLatLng, endLatLng);
+    const diameter = Math.min(
+      Math.max(haversineDistance(startLatLng, endLatLng), 2000),
+      10000,
+    );
     const radius = diameter / 2;
 
-    const candidates: Partial<PlaceData>[] = [];
+    let candidates: Partial<PlaceData>[] = [];
 
     let pagetoken: string | undefined = undefined;
+    const minprice: number | undefined = undefined;
+    const maxprice: number | undefined = undefined;
+    const placeType: AddressType | undefined = undefined;
     while (true) {
       const resp = await this.client.placesNearby({
         params: {
           key: this.key,
           location: midLatLng,
-          pagetoken: pagetoken,
-          minprice: undefined,
-          maxprice: undefined,
-          type: undefined,
+          language: Language.ko,
+          ...(pagetoken ? { pagetoken } : {}),
+          ...(minprice ? { minprice } : {}),
+          ...(maxprice ? { maxprice } : {}),
+          ...(placeType ? { type: placeType } : {}),
           radius: radius,
+        },
+        raxConfig: {
+          retryDelay: 2000,
+          shouldRetry: (_err) => {
+            return true;
+          },
+          backoffType: 'static',
         },
       });
 
       const { next_page_token, results, status, error_message } = resp.data;
 
       if (status !== Status.OK) {
-        // TODO:
         throw new Error(`${status} ${error_message}`);
       }
 
-      candidates.concat(results);
+      candidates = candidates.concat(results);
 
       if (!next_page_token) {
         break;
       }
-
       pagetoken = next_page_token;
+
+      await sleep(2000);
     }
 
     return candidates;
   }
 
-  async schedule(
+  async scheduleBetween(
     from: Place,
     to: Place,
     candidates: Partial<PlaceData>[],
     needs: Needs,
   ): Promise<Place[]> {
-    const result: Place[] = [from, to];
+    if (candidates.length == 0) {
+      return [];
+    }
+    if (to.time - from.time < Duration.fromObject({ hours: 1.5 }).toMillis()) {
+      return [];
+    }
 
-    //
+    const minFoodRatioPerHour = 3 / (18 - 8);
+    if (needs.food && needs.food < minFoodRatioPerHour) {
+      const restaurantCandidates = candidates.filter(
+        (candidate) =>
+          candidate.types && candidate.types.includes(AddressType.restaurant),
+      );
 
-    return result;
+      const perRestaurant = 1 / Duration.fromMillis(to.time - from.time).hours;
+      const restaurantsNum = Math.min(
+        Math.round(0.3 / perRestaurant),
+        restaurantCandidates.length,
+      );
+
+      const restaurants: Place[] = [];
+
+      for (let i = 0; i < restaurantsNum; i++) {
+        const randomIndex = Math.floor(
+          restaurantCandidates.length * Math.random(),
+        );
+        restaurants.push({
+          type: 'place',
+          time: ((to.time - from.time) / (restaurantsNum + 1)) * i,
+          details: restaurantCandidates.splice(randomIndex, 1)[0],
+        });
+      }
+
+      const results: Place[] = [
+        //
+      ];
+
+      return results;
+    } else {
+      const randomIndex = Math.floor(candidates.length * Math.random());
+      const waypoint: Place = {
+        type: 'place',
+        time: from.time + (to.time - from.time) / 2,
+        details: candidates.splice(randomIndex, 1)[0],
+      };
+
+      const result: Place[] = [
+        ...(await this.scheduleBetween(from, waypoint, candidates, needs)),
+        waypoint,
+        ...(await this.scheduleBetween(waypoint, to, candidates, needs)),
+      ];
+
+      return result;
+    }
   }
 
   async scheduleDay(
     plan: Plan,
+    from: Place,
+    to: Place,
+    candidates: Partial<PlaceData>[],
     itineraryDaily: ItineraryDaily,
   ): Promise<ItineraryDaily> {
     // Remove all system-generated schedules
@@ -110,21 +177,8 @@ export class ScheduleRecommendService {
       (schedule) => schedule.manual && !this.isEmptyObject(schedule.manual),
     );
 
-    // TODO:
-    const start: Place = {
-      type: 'place',
-      details: {},
-    };
-    const end: Place = {
-      type: 'place',
-      details: {},
-    };
-
-    const candidates = await this.retreiveCandidates(start, end);
-
-    const result = await this.schedule(start, end, candidates, {
-      hunger: 0,
-      stamina: 0,
+    const result = await this.scheduleBetween(from, to, candidates, {
+      food: 0,
     });
 
     //
@@ -150,7 +204,7 @@ export class ScheduleRecommendService {
     );
 
     for (const itineraryDaily of plan.itinerary) {
-      this.scheduleDay(plan, itineraryDaily);
+      // this.scheduleDay(plan, itineraryDaily);
     }
 
     return plan;
