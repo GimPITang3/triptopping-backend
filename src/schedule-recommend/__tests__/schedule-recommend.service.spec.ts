@@ -36,6 +36,11 @@ describe('ScheduleRecommendService', () => {
   describe('Plan recommendation', () => {
     let plan: Plan;
 
+    let candidates: Partial<PlaceData>[];
+
+    let start: Place;
+    let end: Place;
+
     beforeEach(async () => {
       plan = {
         planId: '',
@@ -50,59 +55,8 @@ describe('ScheduleRecommendService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-    });
 
-    it.skip('should return candidates', async () => {
-      const start: Place = {
-        type: 'place',
-        details: {
-          geometry: {
-            location: {
-              lat: 35.6869211,
-              lng: 139.6933196,
-            },
-            viewport: {
-              northeast: {
-                lat: 35.6882700802915,
-                lng: 139.6946685802915,
-              },
-              southwest: {
-                lat: 35.6855721197085,
-                lng: 139.6919706197085,
-              },
-            },
-          },
-        },
-      };
-      const end: Place = {
-        type: 'place',
-        details: {
-          geometry: {
-            location: {
-              lat: 35.6869211,
-              lng: 139.6933196,
-            },
-            viewport: {
-              northeast: {
-                lat: 35.6882700802915,
-                lng: 139.6946685802915,
-              },
-              southwest: {
-                lat: 35.6855721197085,
-                lng: 139.6919706197085,
-              },
-            },
-          },
-        },
-      };
-
-      const candidates = await service.retreiveCandidates(start, end);
-
-      expect(candidates.length).toBeGreaterThan(0);
-    }, 10000);
-
-    it('should schedule between two schedules', async () => {
-      const candidates: Partial<PlaceData>[] = JSON.parse(
+      candidates = JSON.parse(
         fs.readFileSync(path.join(__dirname, 'candidates.json'), {
           encoding: 'utf-8',
         }),
@@ -115,20 +69,28 @@ describe('ScheduleRecommendService', () => {
       );
       const hotel = candidates.splice(hotelIndex, 1)[0];
 
-      const start: Place = {
+      start = {
         type: 'place',
         time: Duration.fromObject({ hours: 6, minutes: 0 }).toMillis(),
         details: hotel,
       };
 
-      const end: Place = {
+      end = {
         type: 'place',
         time: Duration.fromObject({ hours: 22, minutes: 0 }).toMillis(),
         details: hotel,
       };
+    });
 
+    it.skip('should return candidates', async () => {
+      const candidates = await service.retreiveCandidates(start, end);
+
+      expect(candidates.length).toBeGreaterThan(0);
+    }, 10000);
+
+    it('should schedule between two schedules', async () => {
       const needs: Needs = {
-        food: 100,
+        // food: 100,
       };
 
       const schedules = await service.scheduleBetween(
@@ -139,42 +101,31 @@ describe('ScheduleRecommendService', () => {
       );
 
       expect(schedules.length).toBeGreaterThanOrEqual(2);
-
-      console.log(
-        schedules.map((schedule) =>
-          [
-            schedule.details.name,
-            Duration.fromMillis(schedule.time).toISOTime(),
-            schedule.details.types.join('/'),
-            [schedule.details.geometry.location]
-              .map((loc) => `${loc.lat} ${loc.lng}`)
-              .join(''),
-          ].join('     '),
-        ),
-      );
-
-      console.log(
-        schedules.map((schedule) => schedule.details.geometry.location),
-      );
     });
 
-    it.skip('should get scheduled itinerary of a day', async () => {
+    it('should get scheduled itinerary of a day', async () => {
       const itineraryDaily: ItineraryDaily = [];
       const newItineraryDaily = await service.scheduleDay(
         plan,
-        null,
-        null,
-        [],
+        start,
+        end,
+        candidates,
         itineraryDaily,
       );
 
       expect(newItineraryDaily).toBeDefined();
     });
 
-    it.skip('should get new plan from existing plan', async () => {
+    it('should get new plan from existing plan', async () => {
       const newPlan = await service.recommend(plan);
 
       expect(newPlan).toBeDefined();
+      expect(newPlan.itinerary.length).toBeGreaterThan(0);
+
+      for (const itineraryDaily of newPlan.itinerary) {
+        expect(itineraryDaily).toBeDefined();
+        expect(itineraryDaily.length).toBeGreaterThan(0);
+      }
     });
   });
 });

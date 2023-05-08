@@ -13,11 +13,15 @@ import { GOOGLE_MAPS_ACCESS_KEY_TOKEN } from 'src/google-maps/google-maps.consta
 import {
   ItineraryDaily,
   Place,
+  Schedule,
 } from 'src/plans/interfaces/itinerary.interface';
 import { Needs } from './interfaces/needs.interface';
 
 import * as haversineDistance from 'haversine-distance';
 import { Duration } from 'luxon';
+
+import path = require('path');
+import * as fs from 'fs';
 
 interface LatLng {
   lat: number;
@@ -40,7 +44,21 @@ export class ScheduleRecommendService {
     return Object.keys(param).length === 0 && param.constructor === Object;
   }
 
+  // TODO: temporal
   async retreiveCandidates(
+    _start: Place,
+    _end: Place,
+  ): Promise<Partial<PlaceData>[]> {
+    const candidates = JSON.parse(
+      fs.readFileSync(path.join(__dirname, '__tests__', 'candidates.json'), {
+        encoding: 'utf-8',
+      }),
+    );
+
+    return candidates;
+  }
+
+  async _retreiveCandidates(
     start: Place,
     end: Place,
   ): Promise<Partial<PlaceData>[]> {
@@ -173,38 +191,59 @@ export class ScheduleRecommendService {
     itineraryDaily: ItineraryDaily,
   ): Promise<ItineraryDaily> {
     // Remove all system-generated schedules
-    const newItineraryDaily: ItineraryDaily = itineraryDaily.filter(
-      (schedule) => schedule.manual && !this.isEmptyObject(schedule.manual),
-    );
+    // const newItineraryDaily: ItineraryDaily = itineraryDaily.filter(
+    //   (schedule) => schedule.manual && !this.isEmptyObject(schedule.manual),
+    // );
 
-    const result = await this.scheduleBetween(from, to, candidates, {
-      food: 0,
-    });
+    const result: Schedule<Place>[] = (
+      await this.scheduleBetween(from, to, candidates, {})
+    ).map((schedule) => ({
+      type: 'place',
+      system: {
+        ...schedule,
+      },
+    }));
+
+    itineraryDaily.splice(0, itineraryDaily.length, ...result);
 
     //
-    for (const schedule of itineraryDaily) {
-      schedule.manual.duration;
-      schedule.manual.time;
-      if (
-        schedule.type === 'place' &&
-        schedule.manual?.details?.types.includes(AddressType.restaurant)
-      ) {
-        //
-      }
-    }
+    // for (const schedule of itineraryDaily) {
+    //   schedule.manual.duration;
+    //   schedule.manual.time;
+    //   if (
+    //     schedule.type === 'place' &&
+    //     schedule.manual?.details?.types.includes(AddressType.restaurant)
+    //   ) {
+    //     //
+    //   }
+    // }
 
-    return newItineraryDaily;
+    // return newItineraryDaily;
+    return result;
   }
 
   async recommend(plan: Plan): Promise<Plan> {
     // Make itinerary array to have exact length
     plan.itinerary = plan.itinerary.slice(0, plan.period);
     plan.itinerary = plan.itinerary.concat(
-      Array.apply([], new Array(plan.period - plan.itinerary.length)),
+      Array(plan.period - plan.itinerary.length)
+        .fill(undefined)
+        .map(() => []),
     );
 
     for (const itineraryDaily of plan.itinerary) {
-      // this.scheduleDay(plan, itineraryDaily);
+      const from: Place = {
+        type: 'place',
+        time: Duration.fromObject({ hours: 7, minutes: 0 }).toMillis(),
+        details: {},
+      };
+      const to: Place = {
+        type: 'place',
+        time: Duration.fromObject({ hours: 22, minutes: 0 }).toMillis(),
+        details: {},
+      };
+      const candidates = await this.retreiveCandidates(from, to);
+      await this.scheduleDay(plan, from, to, candidates, itineraryDaily);
     }
 
     return plan;
