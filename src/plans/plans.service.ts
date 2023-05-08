@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 
 import { createId } from '@paralleldrive/cuid2';
 
+import { ScheduleRecommendService } from 'src/schedule-recommend/schedule-recommend.service';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
 import { Plan, PlanDocument } from './plan.schema';
@@ -18,6 +19,7 @@ export class PlanNotFoundError extends Error {
 export class PlansService {
   constructor(
     @InjectModel(Plan.name) private readonly plansModel: Model<PlanDocument>,
+    private readonly scheduleRecommend: ScheduleRecommendService,
   ) {}
 
   async findAll(): Promise<PlanDocument[]> {
@@ -36,21 +38,18 @@ export class PlansService {
   }
 
   async create(createPlanDto: CreatePlanDto): Promise<PlanDocument> {
-    const plan = new this.plansModel(createPlanDto);
-    plan.planId = createId();
-    plan.itinerary = [];
-
-    plan.name = createPlanDto.name;
-    plan.author = new Types.ObjectId(createPlanDto.author);
-    plan.numberOfMembers = createPlanDto.numberOfMembers;
-    plan.budget = createPlanDto.budget;
-    plan.tags = createPlanDto.tags;
-
-    plan.period = createPlanDto.period;
-    if (createPlanDto.startDate) plan.startDate = createPlanDto.startDate;
-
+    let planData = {
+      ...createPlanDto,
+      planId: createId(),
+      itinerary: [],
+      author: new Types.ObjectId(createPlanDto.author),
+      members: [],
+    };
+    // 추천 스케줄 반영
+    // TODO: planData에 Plan 타입의 일부 형식이 없어 임시로 as 처리
+    planData = await this.scheduleRecommend.recommend(planData as Plan);
+    const plan = new this.plansModel(planData);
     await plan.save();
-
     return plan;
   }
 
