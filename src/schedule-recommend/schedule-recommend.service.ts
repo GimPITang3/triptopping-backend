@@ -20,8 +20,7 @@ import { Needs } from './interfaces/needs.interface';
 import * as haversineDistance from 'haversine-distance';
 import { Duration } from 'luxon';
 
-import path = require('path');
-import * as fs from 'fs';
+import { candidates } from './__tests__/candidates';
 
 interface LatLng {
   lat: number;
@@ -49,13 +48,7 @@ export class ScheduleRecommendService {
     _start: Place,
     _end: Place,
   ): Promise<Partial<PlaceData>[]> {
-    const candidates = JSON.parse(
-      fs.readFileSync(path.join(__dirname, '__tests__', 'candidates.json'), {
-        encoding: 'utf-8',
-      }),
-    );
-
-    return candidates;
+    return candidates.slice();
   }
 
   async _retreiveCandidates(

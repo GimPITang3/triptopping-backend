@@ -11,9 +11,8 @@ import {
   Place,
 } from 'src/plans/interfaces/itinerary.interface';
 
-import path = require('path');
-import * as fs from 'fs';
-import { PlaceData } from '@googlemaps/google-maps-services-js';
+import { candidates } from './candidates';
+
 import { Needs } from '../interfaces/needs.interface';
 import { Duration } from 'luxon';
 
@@ -36,8 +35,6 @@ describe('ScheduleRecommendService', () => {
   describe('Plan recommendation', () => {
     let plan: Plan;
 
-    let candidates: Partial<PlaceData>[];
-
     let start: Place;
     let end: Place;
 
@@ -55,12 +52,6 @@ describe('ScheduleRecommendService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-
-      candidates = JSON.parse(
-        fs.readFileSync(path.join(__dirname, 'candidates.json'), {
-          encoding: 'utf-8',
-        }),
-      );
 
       const hotelPlaceId = 'ChIJ85hbBNOMGGARYgvauINiX18';
 
