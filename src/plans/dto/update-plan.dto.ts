@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import { IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class UpdatePlanDto {
@@ -22,6 +23,7 @@ export class UpdatePlanDto {
   @IsNumber()
   period: number;
 
+  @Type(() => Date)
   @IsDate()
   @IsOptional()
   startDate?: Date;
