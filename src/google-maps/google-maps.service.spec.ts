@@ -1,12 +1,17 @@
 import { Test } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 
-import { Client, PlaceInputType } from '@googlemaps/google-maps-services-js';
+import {
+  AddressType,
+  Client,
+  Language,
+  PlaceInputType,
+} from '@googlemaps/google-maps-services-js';
 
 import { GoogleMapsModule } from './google-maps.module';
 import { GOOGLE_MAPS_ACCESS_KEY_TOKEN } from './google-maps.constants';
 
-describe('Google Maps', () => {
+describe.skip('Google Maps', () => {
   let client: Client;
   let key: string;
 
@@ -85,5 +90,93 @@ describe('Google Maps', () => {
     });
 
     expect(near.data.results.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('GoogleMaps Testtest', () => {
+  let client: Client;
+  let key: string;
+
+  beforeEach(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({
+          envFilePath: ['.development.local.env', '.development.env'],
+        }),
+        GoogleMapsModule,
+      ],
+    }).compile();
+
+    client = moduleRef.get<Client>(Client);
+    key = moduleRef.get<string>(GOOGLE_MAPS_ACCESS_KEY_TOKEN);
+  });
+
+  it.skip('Plz find city', async () => {
+    const city = 'tokyo';
+
+    const resp = await client.findPlaceFromText({
+      params: {
+        input: `${city}`,
+        inputtype: PlaceInputType.textQuery,
+        language: Language.ko,
+        fields: ['geometry', 'name'],
+        key,
+      },
+    });
+
+    const cityLoc = resp.data.candidates[0].geometry.location;
+
+    console.log(JSON.stringify(resp.data.candidates[0]));
+
+    const lodgingResp = await client.placesNearby({
+      params: {
+        location: cityLoc,
+        radius: 50000,
+        language: Language.ko,
+        type: AddressType.lodging,
+        key,
+      },
+    });
+
+    console.log(
+      'ad;lkfjasl;kdfjal;dj',
+      lodgingResp.data.results
+        .map((i) => ({
+          name: i.name,
+          rating: i.rating,
+          user: i.user_ratings_total,
+        }))
+        .sort((a, b) => (b.rating || 0) - (a.rating || 0)),
+    );
+  });
+
+  it('WTF', async () => {
+    const city = 'tokyo';
+
+    const resp = await client.textSearch({
+      params: {
+        // query: `${city} tourist places`,
+        query: `${city} lodging`,
+        language: Language.ko,
+        // region: region,
+        location: {
+          lat: 35.6761919,
+          lng: 139.6503106,
+        },
+        key,
+      },
+    });
+
+    console.log(resp);
+
+    console.log(
+      resp.data.results
+        .map((i) => ({
+          name: i.name,
+          user: i.user_ratings_total,
+          rating: i.rating,
+        }))
+        .sort((a, b) => (b.user || 0) - (a.user || 0)),
+    );
   });
 });

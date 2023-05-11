@@ -1,4 +1,6 @@
-export const candidates: Partial<any>[] = [
+import { PlaceData } from '@googlemaps/google-maps-services-js';
+
+export const places: Partial<PlaceData>[] = <Partial<PlaceData>[]>[
   {
     geometry: {
       location: {
@@ -2974,8 +2976,6 @@ export const candidates: Partial<any>[] = [
       global_code: '8Q7XMMPW+XR',
     },
     rating: 3.1,
-    reference: 'ChIJYepckNGMGGAR_dmMgJVxcQs',
-    scope: 'GOOGLE',
     types: ['health', 'point_of_interest', 'establishment'],
     user_ratings_total: 92,
     vicinity:

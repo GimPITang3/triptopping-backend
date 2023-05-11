@@ -5,6 +5,7 @@ import {
   Client,
   Language,
   PlaceData,
+  PlaceInputType,
   Status,
 } from '@googlemaps/google-maps-services-js';
 import { Plan } from 'src/plans/plan.schema';
@@ -14,13 +15,14 @@ import {
   ItineraryDaily,
   Place,
   Schedule,
+  ScheduleSlot,
 } from 'src/plans/interfaces/itinerary.interface';
 import { Needs } from './interfaces/needs.interface';
 
 import * as haversineDistance from 'haversine-distance';
 import { Duration } from 'luxon';
 
-import { candidates } from './__tests__/candidates';
+import { places } from './__tests__/places';
 
 interface LatLng {
   lat: number;
@@ -39,8 +41,99 @@ export class ScheduleRecommendService {
     private readonly key: string,
   ) {}
 
-  async isEmptyObject(param: any) {
+  isEmptyObject(param: any): boolean {
     return Object.keys(param).length === 0 && param.constructor === Object;
+  }
+
+  splitToChunks<T>(array: Array<T>, parts: number): Array<Array<T>> {
+    const result: Array<Array<T>> = [];
+    for (let i = parts; i > 0; i--) {
+      result.push(array.splice(0, Math.ceil(array.length / i)));
+    }
+
+    return result;
+  }
+
+  async retreiveCityLocation(city: string): Promise<LatLng> {
+    const cityResp = await this.client.findPlaceFromText({
+      params: {
+        input: `${city}`,
+        inputtype: PlaceInputType.textQuery,
+        fields: ['geometry'],
+        key: this.key,
+      },
+    });
+
+    if (cityResp.data.status !== Status.OK) {
+      throw new Error('status is not okay');
+    }
+    if (cityResp.data.candidates.length == 0) {
+      throw new Error('no candidates');
+    }
+
+    const cityInfo = cityResp.data.candidates[0];
+
+    if (!cityInfo.geometry?.location) {
+      throw new Error('no location data');
+    }
+
+    return cityInfo.geometry.location;
+  }
+
+  /**
+   * Retreive landmarks of city
+   *
+   * @param city Should be exact name of city
+   */
+  async retreiveLandmarks(
+    city: string,
+    cityLoc: LatLng,
+  ): Promise<Partial<PlaceData>[]> {
+    const resp = await this.client.textSearch({
+      params: {
+        query: `${city} tourist places`,
+        language: Language.ko,
+        location: cityLoc,
+        key: this.key,
+      },
+    });
+
+    if (resp.data.status !== Status.OK) {
+      throw new Error(`status is not okay: ${resp.data.error_message}`);
+    }
+    if (resp.data.results.length == 0) {
+      throw new Error('no results');
+    }
+
+    return resp.data.results;
+  }
+
+  async retreiveLodging(
+    city: string,
+    cityLoc: LatLng,
+  ): Promise<Partial<PlaceData>[]> {
+    const resp = await this.client.textSearch({
+      params: {
+        query: `${city} lodging`,
+        language: Language.ko,
+        location: cityLoc,
+        key: this.key,
+      },
+    });
+
+    if (resp.data.status !== Status.OK) {
+      throw new Error(`status is not okay: ${resp.data.error_message}`);
+    }
+
+    const results = resp.data.results.filter((place) =>
+      place.types.includes(AddressType.lodging),
+    );
+
+    if (results.length == 0) {
+      throw new Error('no results');
+    }
+
+    return results;
   }
 
   // TODO: temporal
@@ -48,7 +141,7 @@ export class ScheduleRecommendService {
     _start: Place,
     _end: Place,
   ): Promise<Partial<PlaceData>[]> {
-    return candidates.slice();
+    return places.slice();
   }
 
   async _retreiveCandidates(
@@ -123,57 +216,52 @@ export class ScheduleRecommendService {
     if (candidates.length == 0) {
       return [];
     }
-    if (to.time - from.time < Duration.fromObject({ hours: 1.5 }).toMillis()) {
+    const delta = to.time - from.time;
+    if (delta < Duration.fromObject({ hours: 1.0 }).toMillis()) {
       return [];
     }
 
-    const minFoodRatioPerHour = 3 / (18 - 8);
-    if (needs.food && needs.food < minFoodRatioPerHour) {
-      const restaurantCandidates = candidates.filter(
-        (candidate) =>
-          candidate.types && candidate.types.includes(AddressType.restaurant),
-      );
+    const fromLatLng = from.details.geometry.location;
+    const toLatLng = to.details.geometry.location;
+    const mid: LatLng = {
+      lat: (fromLatLng.lat + toLatLng.lat) / 2,
+      lng: (fromLatLng.lng + toLatLng.lng) / 2,
+    };
+    const diameter = haversineDistance(fromLatLng, toLatLng);
+    // const minDiameter = 5000 / (delta / 1000 / 60 / 60);
+    // const radius = Math.max(diameter, minDiameter) / 2;
+    const radius = diameter / 2;
 
-      const perRestaurant = 1 / Duration.fromMillis(to.time - from.time).hours;
-      const restaurantsNum = Math.min(
-        Math.round(0.3 / perRestaurant),
-        restaurantCandidates.length,
-      );
+    const possibleIndices: number[] = candidates
+      .map((candidate, index) => [index, candidate] as const)
+      .filter(([_index, candidate]) => {
+        const loc = candidate.geometry.location;
+        const dist = haversineDistance(loc, mid);
 
-      const restaurants: Place[] = [];
+        return dist <= radius;
+      })
+      .map(([index, _candidate]) => index);
 
-      for (let i = 0; i < restaurantsNum; i++) {
-        const randomIndex = Math.floor(
-          restaurantCandidates.length * Math.random(),
-        );
-        restaurants.push({
-          type: 'place',
-          time: ((to.time - from.time) / (restaurantsNum + 1)) * i,
-          details: restaurantCandidates.splice(randomIndex, 1)[0],
-        });
-      }
-
-      const results: Place[] = [
-        //
-      ];
-
-      return results;
-    } else {
-      const randomIndex = Math.floor(candidates.length * Math.random());
-      const waypoint: Place = {
-        type: 'place',
-        time: from.time + (to.time - from.time) / 2,
-        details: candidates.splice(randomIndex, 1)[0],
-      };
-
-      const result: Place[] = [
-        ...(await this.scheduleBetween(from, waypoint, candidates, needs)),
-        waypoint,
-        ...(await this.scheduleBetween(waypoint, to, candidates, needs)),
-      ];
-
-      return result;
+    if (possibleIndices.length == 0) {
+      return [];
     }
+
+    const randomIndex =
+      possibleIndices[Math.floor(possibleIndices.length * Math.random())];
+
+    const waypoint: Place = {
+      type: 'place',
+      time: from.time + (to.time - from.time) / 2,
+      details: candidates.splice(randomIndex, 1)[0],
+    };
+
+    const result: Place[] = [
+      ...(await this.scheduleBetween(from, waypoint, candidates, needs)),
+      waypoint,
+      ...(await this.scheduleBetween(waypoint, to, candidates, needs)),
+    ];
+
+    return result;
   }
 
   async scheduleDay(
@@ -188,12 +276,18 @@ export class ScheduleRecommendService {
     //   (schedule) => schedule.manual && !this.isEmptyObject(schedule.manual),
     // );
 
-    const result: Schedule<Place>[] = (
-      await this.scheduleBetween(from, to, candidates, {})
-    ).map((schedule) => ({
+    // const result: Schedule<Place>[] = (
+    //   await this.scheduleBetween(from, to, candidates, {})
+    // ).map((schedule) => ({
+    //   type: 'place',
+    //   system: {
+    //     ...schedule,
+    //   },
+    // }));
+    const result: Schedule<Place>[] = candidates.map((place) => ({
       type: 'place',
       system: {
-        ...schedule,
+        details: place,
       },
     }));
 
@@ -224,20 +318,62 @@ export class ScheduleRecommendService {
         .map(() => []),
     );
 
-    for (const itineraryDaily of plan.itinerary) {
+    // TODO: should get city name
+    const city = 'tokyo';
+    const cityLoc = await this.retreiveCityLocation(city);
+
+    const landmarks = await this.retreiveLandmarks(city, cityLoc);
+    const lodgings = await this.retreiveLodging(city, cityLoc);
+    landmarks.sort((a, b) => b.user_ratings_total - a.user_ratings_total);
+    lodgings.sort((a, b) => b.user_ratings_total - a.user_ratings_total);
+
+    // Pickup lodging
+    const lodging = lodgings[0];
+
+    // Distribute landmarks
+    const landmarksPerDay = this.splitToChunks(landmarks, plan.period);
+
+    plan.itinerary.forEach((itineraryDaily, dayIndex) => {
       const from: Place = {
         type: 'place',
         time: Duration.fromObject({ hours: 7, minutes: 0 }).toMillis(),
-        details: {},
+        details: lodging,
       };
       const to: Place = {
         type: 'place',
         time: Duration.fromObject({ hours: 22, minutes: 0 }).toMillis(),
-        details: {},
+        details: lodging,
       };
-      const candidates = await this.retreiveCandidates(from, to);
-      await this.scheduleDay(plan, from, to, candidates, itineraryDaily);
-    }
+
+      itineraryDaily.splice(0, itineraryDaily.length);
+
+      const schedules: Place[] = [
+        from,
+        ...landmarksPerDay[dayIndex].map<Place>((landmark, i) => ({
+          type: 'place',
+          time: Duration.fromObject({
+            hours:
+              (22 - 1 - (7 + 1)) * (i / landmarksPerDay[dayIndex].length) +
+              7 +
+              1,
+            minutes: 0,
+          }).toMillis(),
+          details: landmark,
+        })),
+        to,
+      ];
+      itineraryDaily.splice(
+        0,
+        0,
+        ...schedules.map<ScheduleSlot>((schedule) => ({
+          type: 'place',
+          system: schedule,
+        })),
+      );
+
+      // const candidates = await this.retreiveCandidates(from, to);
+      // await this.scheduleDay(plan, from, to, candidates, itineraryDaily);
+    });
 
     return plan;
   }
