@@ -43,6 +43,9 @@ export class Plan {
   routes?: DirectionsRoute[][];
 
   @Prop()
+  routesCalculatedAt?: Date;
+
+  @Prop()
   createdAt: Date;
 
   @Prop()

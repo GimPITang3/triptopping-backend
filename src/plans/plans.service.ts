@@ -106,9 +106,18 @@ export class PlansService {
       throw new PlanNotFoundError();
     }
 
-    await this.scheduleRecommend.calculateRoutes(plan);
+    const routesOutdated =
+      !plan.routes ||
+      (plan.routesCalculatedAt &&
+        plan.routesCalculatedAt.getTime() < plan.updatedAt.getTime());
 
-    await plan.save();
+    if (routesOutdated) {
+      await this.scheduleRecommend.calculateRoutes(plan);
+
+      plan.routesCalculatedAt = new Date();
+
+      await plan.save();
+    }
 
     return plan;
   }
