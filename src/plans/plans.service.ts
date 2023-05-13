@@ -28,9 +28,11 @@ export class PlansService {
   }
 
   async findById(planId: string): Promise<PlanDocument> {
-    const plan = await this.plansModel.findOne({ planId }).exec();
+    const plan = await this.plansModel
+      .findOne({ planId, deletedAt: undefined })
+      .exec();
 
-    if (!plan || plan.deletedAt !== undefined) {
+    if (!plan) {
       throw new PlanNotFoundError();
     }
 
@@ -38,55 +40,59 @@ export class PlansService {
   }
 
   async create(createPlanDto: CreatePlanDto): Promise<PlanDocument> {
-    let planData = {
+    const plan = new this.plansModel({
       ...createPlanDto,
       planId: createId(),
       itinerary: [],
       author: new Types.ObjectId(createPlanDto.author),
       members: [],
-    };
-    // 추천 스케줄 반영
-    // TODO: planData에 Plan 타입의 일부 형식이 없어 임시로 as 처리
-    planData = await this.scheduleRecommend.recommend(planData as Plan);
-    const plan = new this.plansModel(planData);
+    });
+
+    await this.scheduleRecommend.recommend(plan);
+
     await plan.save();
+
     return plan;
   }
 
   async update(updatePlanDto: UpdatePlanDto): Promise<PlanDocument> {
     const planId = updatePlanDto.planId;
-    const plan = await this.plansModel.findOne({ planId }).exec();
+    const plan = await this.plansModel
+      .findOne({ planId, deletedAt: undefined })
+      .exec();
 
-    if (!plan || plan.deletedAt !== undefined) {
+    if (!plan) {
       throw new PlanNotFoundError();
     }
-
-    // TODO:
-
-    plan.itinerary = [];
 
     plan.name = updatePlanDto.name;
     plan.numberOfMembers = updatePlanDto.numberOfMembers;
 
-    plan.members = updatePlanDto.members.map((e) => {
-      return new Types.ObjectId(e);
-    });
+    plan.members = updatePlanDto.members.map((e) => new Types.ObjectId(e));
     plan.budget = updatePlanDto.budget;
     plan.tags = updatePlanDto.tags;
 
     plan.period = updatePlanDto.period;
     if (updatePlanDto.startDate) plan.startDate = updatePlanDto.startDate;
 
+    await this.scheduleRecommend.recommend(plan);
+
+    await plan.save();
+
     return plan;
   }
 
   async delete(planId: string) {
-    const plan = await this.plansModel.findOne({ planId }).exec();
+    const plan = await this.plansModel
+      .findOne({ planId, deletedAt: undefined })
+      .exec();
 
-    if (!plan || plan.deletedAt !== undefined) {
+    if (!plan) {
       throw new PlanNotFoundError();
     }
 
-    // TODO:
+    plan.deletedAt = new Date();
+
+    await plan.save();
   }
 }
