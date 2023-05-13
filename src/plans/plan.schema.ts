@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Schema as MongooseSchema, Types } from 'mongoose';
 
 import { Itinerary } from './interfaces/itinerary.interface';
+import { DirectionsRoute } from '@googlemaps/google-maps-services-js';
 
 export type PlanDocument = HydratedDocument<Plan>;
 
@@ -37,6 +38,9 @@ export class Plan {
 
   @Prop()
   itinerary: Itinerary;
+
+  @Prop()
+  routes?: DirectionsRoute[][];
 
   @Prop()
   createdAt: Date;

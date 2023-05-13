@@ -3,6 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   AddressType,
   Client,
+  DirectionsRoute,
   Language,
   PlaceData,
   PlaceInputType,
@@ -14,8 +15,8 @@ import { GOOGLE_MAPS_ACCESS_KEY_TOKEN } from 'src/google-maps/google-maps.consta
 import {
   ItineraryDaily,
   Place,
-  Schedule,
   ScheduleSlot,
+  ScheduleType,
 } from 'src/plans/interfaces/itinerary.interface';
 import { Needs } from './interfaces/needs.interface';
 
@@ -31,6 +32,14 @@ interface LatLng {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function flattenScheduleSlot(schedule: ScheduleSlot): ScheduleType {
+  return <ScheduleType>{
+    type: schedule.type,
+    ...schedule.system,
+    ...schedule.manual,
+  };
 }
 
 @Injectable()
@@ -284,7 +293,7 @@ export class ScheduleRecommendService {
     //     ...schedule,
     //   },
     // }));
-    const result: Schedule<Place>[] = candidates.map((place) => ({
+    const result: ScheduleSlot<Place>[] = candidates.map((place) => ({
       type: 'place',
       system: {
         details: place,
@@ -309,6 +318,10 @@ export class ScheduleRecommendService {
     return result;
   }
 
+  /**
+   * It will fill itinerary of the given plan in-place.
+   * @param plan
+   */
   async recommend(plan: Plan): Promise<Plan> {
     // Make itinerary array to have exact length
     plan.itinerary = plan.itinerary.slice(0, plan.period);
@@ -374,6 +387,69 @@ export class ScheduleRecommendService {
       // const candidates = await this.retreiveCandidates(from, to);
       // await this.scheduleDay(plan, from, to, candidates, itineraryDaily);
     });
+
+    return plan;
+  }
+
+  /**
+   * It will calculate routes of the itinerary of the given plan in-place.
+   * @param plan
+   */
+  async calculateRoutes(plan: Plan): Promise<Plan> {
+    plan.routes = await Promise.all(
+      plan.itinerary.map(async (daily): Promise<DirectionsRoute[]> => {
+        if (daily.length < 2) return [];
+
+        const placeIds = daily
+          .map((scheduleSlot) => flattenScheduleSlot(scheduleSlot))
+          .map((schedule) => {
+            if (schedule.type === 'place') {
+              return schedule.details.place_id;
+            } else {
+              return '';
+            }
+          })
+          .map((placeId) => `place_id:${placeId}`);
+
+        const resp = await this.client.directions({
+          params: {
+            origin: placeIds[0],
+            destination: placeIds[daily.length - 1],
+            waypoints: placeIds.slice(1, daily.length - 1),
+            optimize: true,
+            language: Language.ko,
+            key: this.key,
+          },
+        });
+
+        const { status, error_message, geocoded_waypoints, routes } = resp.data;
+
+        if (status !== Status.OK) {
+          throw new Error(error_message);
+        }
+
+        daily.sort((a, b) => {
+          const A = flattenScheduleSlot(a);
+          const B = flattenScheduleSlot(b);
+          if (A.type !== 'place') return -1;
+          if (B.type !== 'place') return -1;
+
+          const placeIdA = A.details.place_id;
+          const placeIdB = B.details.place_id;
+
+          const waypointIndexA = geocoded_waypoints.findIndex(
+            (i) => i.place_id === placeIdA,
+          );
+          const waypointIndexB = geocoded_waypoints.findIndex(
+            (i) => i.place_id === placeIdB,
+          );
+
+          return waypointIndexA - waypointIndexB;
+        });
+
+        return routes;
+      }),
+    );
 
     return plan;
   }

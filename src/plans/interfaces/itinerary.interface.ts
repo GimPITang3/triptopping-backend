@@ -1,4 +1,4 @@
-import { PlaceData } from '@googlemaps/google-maps-services-js';
+import { PlaceData, RouteLeg } from '@googlemaps/google-maps-services-js';
 
 export interface Place {
   type: 'place';
@@ -20,19 +20,21 @@ export interface Transport {
   /** milli seconds */
   duration?: number;
   cost?: number;
+
+  details?: RouteLeg;
 }
 
 export type ScheduleType = Place | Transport;
 
-export type Schedule<T> = T extends { type: string }
+export type ScheduleTypes = ScheduleType['type'];
+
+export type ScheduleSlot<T = ScheduleType> = T extends ScheduleType
   ? {
       type: T['type'];
       system?: Partial<Omit<T, 'type'>>;
       manual?: Partial<Omit<T, 'type'>>;
     }
   : never;
-
-export type ScheduleSlot = Schedule<ScheduleType>;
 
 export type ItineraryDaily = ScheduleSlot[];
 

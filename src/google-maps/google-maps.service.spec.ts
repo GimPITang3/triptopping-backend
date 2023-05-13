@@ -150,7 +150,7 @@ describe('GoogleMaps Testtest', () => {
     );
   });
 
-  it('WTF', async () => {
+  it.skip('WTF', async () => {
     const city = 'tokyo';
 
     const resp = await client.textSearch({
@@ -178,5 +178,25 @@ describe('GoogleMaps Testtest', () => {
         }))
         .sort((a, b) => (b.user || 0) - (a.user || 0)),
     );
+  });
+
+  it('directions api', async () => {
+    const resp = await client.directions({
+      params: {
+        origin: 'place_id:ChIJvcKpS0CLGGARzVvvlPV8aw8',
+        destination: 'place_id:ChIJvcKpS0CLGGARzVvvlPV8aw8',
+        waypoints: [
+          'place_id:ChIJCewJkL2LGGAR3Qmk0vCTGkg',
+          'place_id:ChIJ85hbBNOMGGARYgvauINiX18',
+        ],
+        language: Language.ko,
+        key,
+      },
+    });
+
+    console.log(resp.data.geocoded_waypoints);
+    console.log(resp.data.routes);
+    console.log(resp.data.available_travel_modes);
+    // console.log(JSON.stringify(resp.data.routes, null, '  '));
   });
 });

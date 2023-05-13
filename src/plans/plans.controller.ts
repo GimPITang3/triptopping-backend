@@ -51,7 +51,7 @@ export class PlansController {
 
   // @UseGuards(JwtGuard)
   @Put(':id')
-  async replace(@Body() replacePlanDto: any) {
+  async replace(@Body() _replacePlanDto: any) {
     return;
   }
 
@@ -59,5 +59,12 @@ export class PlansController {
   @Delete(':id')
   async delete(@Param('id') id: string) {
     await this.plansService.delete(id);
+  }
+
+  @Get('detail/:id')
+  async getDetails(@Param('id') id: string) {
+    const plan = await this.plansService.getDetails(id);
+
+    return plan;
   }
 }

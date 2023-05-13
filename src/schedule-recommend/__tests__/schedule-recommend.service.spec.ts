@@ -81,10 +81,10 @@ describe('ScheduleRecommendService', () => {
     );
   });
 
-  describe('Plan recommendation', () => {
+  describe('Plan recommendation and calculate routes', () => {
     let plan: Plan;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
       plan = {
         planId: '',
         author: new Types.ObjectId(),
@@ -93,14 +93,14 @@ describe('ScheduleRecommendService', () => {
         members: [],
         name: 'New trip',
         numberOfMembers: 0,
-        tags: ['vacation'],
+        tags: ['vacation', 'tokyo'],
         period: 3,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
     });
 
-    it('should recomment plan', async () => {
+    it('should recommend plan', async () => {
       const newPlan = await service.recommend(plan);
 
       expect(newPlan).toBeDefined();
@@ -112,12 +112,24 @@ describe('ScheduleRecommendService', () => {
             if (schedule.type === 'place') {
               return `${schedule.system.details.name} ${Duration.fromMillis(
                 schedule.system.time,
-              ).toISOTime()}`;
+              ).toISOTime()} ${schedule.system.details.place_id}`;
             } else {
               return '';
             }
           }),
         );
+      });
+    });
+
+    it('should calculate routes', async () => {
+      const newPlan = await service.calculateRoutes(plan);
+
+      expect(newPlan).toBeDefined();
+      expect(newPlan.routes).toBeDefined();
+      expect(newPlan.routes.length).toBe(newPlan.period);
+
+      newPlan.routes.forEach((route) => {
+        console.log(route[0]);
       });
     });
   });

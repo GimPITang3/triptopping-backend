@@ -95,4 +95,21 @@ export class PlansService {
 
     await plan.save();
   }
+
+  async getDetails(planId: string): Promise<Plan> {
+    const plan = await this.plansModel.findOne({
+      planId,
+      deletedAt: undefined,
+    });
+
+    if (!plan) {
+      throw new PlanNotFoundError();
+    }
+
+    await this.scheduleRecommend.calculateRoutes(plan);
+
+    await plan.save();
+
+    return plan;
+  }
 }
