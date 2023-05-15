@@ -484,30 +484,21 @@ export class ScheduleRecommendService {
           },
         });
 
-        const { status, error_message, geocoded_waypoints, routes } = resp.data;
+        const { status, error_message, routes } = resp.data;
 
         if (status !== Status.OK) {
           throw new Error(error_message);
         }
 
-        daily.sort((a, b) => {
-          const A = flattenScheduleSlot(a);
-          const B = flattenScheduleSlot(b);
-          if (A.type !== 'place') return -1;
-          if (B.type !== 'place') return -1;
+        const route = routes[0];
 
-          const placeIdA = A.details.place_id;
-          const placeIdB = B.details.place_id;
+        const waypoints: ScheduleSlot[] = daily.splice(1, daily.length - 2);
 
-          const waypointIndexA = geocoded_waypoints.findIndex(
-            (i) => i.place_id === placeIdA,
-          );
-          const waypointIndexB = geocoded_waypoints.findIndex(
-            (i) => i.place_id === placeIdB,
-          );
+        const orderedWaypoints = route.waypoint_order.map(
+          (order) => waypoints[order],
+        );
 
-          return waypointIndexA - waypointIndexB;
-        });
+        daily.splice(1, 0, ...orderedWaypoints);
 
         return routes;
       }),
