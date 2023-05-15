@@ -96,7 +96,7 @@ export class PlansService {
     await plan.save();
   }
 
-  async getDetails(planId: string): Promise<Plan> {
+  async getDetails(planId: string): Promise<PlanDocument> {
     const plan = await this.plansModel.findOne({
       planId,
       deletedAt: undefined,
