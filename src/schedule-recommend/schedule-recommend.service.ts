@@ -54,11 +54,67 @@ export class ScheduleRecommendService {
     return Object.keys(param).length === 0 && param.constructor === Object;
   }
 
-  splitToChunks<T>(array: Array<T>, parts: number): Array<Array<T>> {
-    const result: Array<Array<T>> = [];
-    for (let i = parts; i > 0; i--) {
-      result.push(array.splice(0, Math.ceil(array.length / i)));
+  splitByDistance(
+    array: Partial<PlaceData>[],
+    center: Partial<PlaceData>,
+    parts: number,
+  ): Partial<PlaceData>[][] {
+    const result: Partial<PlaceData>[][] = [];
+    interface PlaceWithDistance extends Partial<PlaceData> {
+      distance: number;
     }
+    const sortedPlaces: PlaceWithDistance[] = array.map((place) => {
+      return {
+        ...place,
+        distance: haversineDistance(
+          place.geometry.location,
+          center.geometry.location,
+        ),
+      };
+    });
+    sortedPlaces.sort((a, b) => b.distance - a.distance);
+    sortedPlaces.sort((a, b) => b.user_ratings_total - a.user_ratings_total);
+
+    for (let i = 0; i < parts; i++) {
+      result[i] = sortedPlaces.splice(0, 1);
+    }
+    let day = 0;
+    while (sortedPlaces.length > 0) {
+      let hMinDist = Number.MAX_SAFE_INTEGER;
+      let minIdx = -1;
+      sortedPlaces.forEach((place, idx) => {
+        const hDist =
+          haversineDistance(place.geometry.location, center.geometry.location) +
+          haversineDistance(
+            place.geometry.location,
+            result[day][0].geometry.location,
+          );
+        if (hDist < hMinDist) {
+          hMinDist = hDist;
+          minIdx = idx;
+        }
+      });
+      result[day].push(sortedPlaces.splice(minIdx, 1)[0]);
+
+      day++;
+      if (day >= parts) {
+        day -= parts;
+      }
+    }
+
+    for (let i = 0; i < parts; i++) {
+      result[i].reverse();
+    }
+
+    return result;
+  }
+
+  splitToChunks(
+    array: Partial<PlaceData>[],
+    center: Partial<PlaceData>,
+    parts: number,
+  ): Partial<PlaceData>[][] {
+    const result = this.splitByDistance(array, center, parts);
 
     return result;
   }
@@ -337,14 +393,14 @@ export class ScheduleRecommendService {
 
     const landmarks = await this.retreiveLandmarks(city, cityLoc);
     const lodgings = await this.retreiveLodging(city, cityLoc);
-    landmarks.sort((a, b) => b.user_ratings_total - a.user_ratings_total);
+    // landmarks.sort((a, b) => b.user_ratings_total - a.user_ratings_total);
     lodgings.sort((a, b) => b.user_ratings_total - a.user_ratings_total);
 
     // Pickup lodging
     const lodging = lodgings[0];
 
     // Distribute landmarks
-    const landmarksPerDay = this.splitToChunks(landmarks, plan.period);
+    const landmarksPerDay = this.splitToChunks(landmarks, lodging, plan.period);
 
     plan.itinerary.forEach((itineraryDaily, dayIndex) => {
       const from: Place = {
