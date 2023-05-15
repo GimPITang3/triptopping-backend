@@ -108,6 +108,7 @@ export class PlansService {
 
     const routesOutdated =
       !plan.routes ||
+      plan.routes.length === 0 ||
       (plan.routesCalculatedAt &&
         plan.routesCalculatedAt.getTime() < plan.updatedAt.getTime());
 
