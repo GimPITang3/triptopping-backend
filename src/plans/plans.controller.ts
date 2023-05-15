@@ -61,10 +61,10 @@ export class PlansController {
     await this.plansService.delete(id);
   }
 
-  @Get('detail/:id')
+  @Get(':id/detail')
   async getDetails(@Param('id') id: string) {
     const plan = await this.plansService.getDetails(id);
 
-    return plan;
+    return plan.toObject();
   }
 }
