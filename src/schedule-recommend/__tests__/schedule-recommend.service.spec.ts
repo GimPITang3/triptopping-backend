@@ -33,7 +33,7 @@ describe('ScheduleRecommendService', () => {
     service = module.get<ScheduleRecommendService>(ScheduleRecommendService);
   });
 
-  const city = 'sapporo';
+  const city = 'osaka';
   let cityLoc: LatLngLiteral;
 
   it('should be defined', () => {
@@ -56,6 +56,7 @@ describe('ScheduleRecommendService', () => {
     landmarks.sort((a, b) => b.user_ratings_total - a.user_ratings_total);
 
     console.log(
+      'landmarks',
       landmarks.map((landmark) => ({
         name: landmark.name,
         user: landmark.user_ratings_total,

@@ -64,29 +64,33 @@ export class ScheduleRecommendService {
   }
 
   async retreiveCityLocation(city: string): Promise<LatLng> {
-    const cityResp = await this.client.findPlaceFromText({
-      params: {
-        input: `${city}`,
-        inputtype: PlaceInputType.textQuery,
-        fields: ['geometry'],
-        key: this.key,
-      },
-    });
+    try {
+      const cityResp = await this.client.findPlaceFromText({
+        params: {
+          input: `${city} city`,
+          inputtype: PlaceInputType.textQuery,
+          fields: ['geometry'],
+          key: this.key,
+        },
+      });
 
-    if (cityResp.data.status !== Status.OK) {
-      throw new Error('status is not okay');
+      if (cityResp.data.status !== Status.OK) {
+        throw new Error('status is not okay: ' + cityResp.data.error_message);
+      }
+      if (cityResp.data.candidates.length == 0) {
+        throw new Error('no candidates');
+      }
+
+      const cityInfo = cityResp.data.candidates[0];
+
+      if (!cityInfo.geometry?.location) {
+        throw new Error('no location data');
+      }
+
+      return cityInfo.geometry.location;
+    } catch (e) {
+      throw new Error(e);
     }
-    if (cityResp.data.candidates.length == 0) {
-      throw new Error('no candidates');
-    }
-
-    const cityInfo = cityResp.data.candidates[0];
-
-    if (!cityInfo.geometry?.location) {
-      throw new Error('no location data');
-    }
-
-    return cityInfo.geometry.location;
   }
 
   /**
@@ -100,7 +104,7 @@ export class ScheduleRecommendService {
   ): Promise<Partial<PlaceData>[]> {
     const resp = await this.client.textSearch({
       params: {
-        query: `${city} tourist places`,
+        query: 'tourist places',
         language: Language.ko,
         location: cityLoc,
         key: this.key,
@@ -344,9 +348,10 @@ export class ScheduleRecommendService {
     const lodging = lodgings[0];
 
     // Distribute landmarks
+    // TODO: distribute landmarks well...
     const landmarksPerDay = this.splitToChunks(landmarks, plan.period);
 
-    plan.itinerary.forEach((itineraryDaily, dayIndex) => {
+    plan.itinerary.forEach((daily, dayIndex) => {
       const from: Place = {
         type: 'place',
         time: Duration.fromObject({ hours: 7, minutes: 0 }).toMillis(),
@@ -358,7 +363,8 @@ export class ScheduleRecommendService {
         details: lodging,
       };
 
-      itineraryDaily.splice(0, itineraryDaily.length);
+      // TODO: remove all schedules
+      daily.splice(0, daily.length);
 
       const schedules: Place[] = [
         from,
@@ -375,7 +381,8 @@ export class ScheduleRecommendService {
         })),
         to,
       ];
-      itineraryDaily.splice(
+
+      daily.splice(
         0,
         0,
         ...schedules.map<ScheduleSlot>((schedule) => ({
