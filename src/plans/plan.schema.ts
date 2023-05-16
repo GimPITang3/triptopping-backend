@@ -7,6 +7,15 @@ import { LatLng } from 'src/interfaces/LatLng.interface';
 
 export type PlanDocument = HydratedDocument<Plan>;
 
+@Schema()
+class LatLngClass implements LatLng {
+  @Prop()
+  lat: number;
+
+  @Prop()
+  lng: number;
+}
+
 @Schema({ timestamps: true })
 export class Plan {
   @Prop({ required: true, unique: true })
@@ -31,8 +40,8 @@ export class Plan {
   @Prop({ required: true })
   period: number;
 
-  @Prop({ required: true })
-  loc: LatLng;
+  @Prop({ required: true, type: () => LatLngClass })
+  loc: LatLngClass;
 
   @Prop()
   budget: number;
