@@ -24,6 +24,7 @@ import * as haversineDistance from 'haversine-distance';
 import { Duration } from 'luxon';
 
 import { LatLng } from 'src/interfaces/lat-lng.interface';
+import { isEmptyObject } from 'src/utils/is-empty-object.util';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -44,10 +45,6 @@ export class ScheduleRecommendService {
     @Inject(GOOGLE_MAPS_ACCESS_KEY_TOKEN)
     private readonly key: string,
   ) {}
-
-  isEmptyObject(param: any): boolean {
-    return Object.keys(param).length === 0 && param.constructor === Object;
-  }
 
   splitByDistance(
     array: Partial<PlaceData>[],
@@ -370,11 +367,12 @@ export class ScheduleRecommendService {
         .map(() => []),
     );
 
+    // Retrive Landmarks and lodgings
     const landmarks = await this.retreiveLandmarks(plan.loc);
     const lodgings = await this.retreiveLodging(plan.loc);
-    lodgings.sort((a, b) => b.user_ratings_total - a.user_ratings_total);
 
-    // Pickup lodging
+    // Pickup best lodging
+    lodgings.sort((a, b) => b.user_ratings_total - a.user_ratings_total);
     const lodging = lodgings[0];
 
     // Exclude landmarks that the user does not want
@@ -386,9 +384,31 @@ export class ScheduleRecommendService {
       ),
     );
 
+    // Exclude landmarks which are already in the schedule
+    const placeIds = plan.itinerary.flatMap((daily) =>
+      daily
+        .map((schedule) => {
+          const flattenSchedule = flattenScheduleSlot(schedule);
+          if (flattenSchedule.type === 'place') {
+            return flattenSchedule.details?.place_id;
+          } else {
+            return undefined;
+          }
+        })
+        .filter((schedule) => schedule !== undefined),
+    );
+    landmarks.splice(
+      0,
+      landmarks.length,
+      ...landmarks.filter(
+        (landmark) => placeIds.includes(landmark.place_id) === false,
+      ),
+    );
+
     // Distribute landmarks
     const landmarksPerDay = this.splitToChunks(landmarks, lodging, plan.period);
 
+    // Plan daily itinerary
     plan.itinerary.forEach((daily, dayIndex) => {
       const from: Place = {
         type: 'place',
@@ -401,10 +421,7 @@ export class ScheduleRecommendService {
         details: lodging,
       };
 
-      // TODO: remove all schedules
-      daily.splice(0, daily.length);
-
-      const schedules: Place[] = [
+      const schedules: ScheduleSlot[] = [
         from,
         ...landmarksPerDay[dayIndex].map<Place>((landmark, i) => ({
           type: 'place',
@@ -418,19 +435,19 @@ export class ScheduleRecommendService {
           details: landmark,
         })),
         to,
-      ];
+      ].map<ScheduleSlot>((place) => ({
+        type: 'place',
+        system: place,
+      }));
 
-      daily.splice(
-        0,
-        0,
-        ...schedules.map<ScheduleSlot>((schedule) => ({
-          type: 'place',
-          system: schedule,
-        })),
+      const userAdjustedSchedules: ScheduleSlot[] = daily.filter(
+        (schedule) => schedule.manual && !isEmptyObject(schedule.manual),
       );
 
-      // const candidates = await this.retreiveCandidates(from, to);
-      // await this.scheduleDay(plan, from, to, candidates, itineraryDaily);
+      // Remove all schedules
+      daily.splice(0, daily.length);
+
+      daily.splice(0, 0, ...schedules, ...userAdjustedSchedules);
     });
 
     return plan;
