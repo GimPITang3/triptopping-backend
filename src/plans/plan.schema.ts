@@ -3,7 +3,7 @@ import { HydratedDocument, Schema as MongooseSchema, Types } from 'mongoose';
 import { DirectionsRoute } from '@googlemaps/google-maps-services-js';
 
 import { Itinerary } from './interfaces/itinerary.interface';
-import { LatLng } from 'src/interfaces/LatLng.interface';
+import { LatLng } from 'src/interfaces/lat-lng.interface';
 
 export type PlanDocument = HydratedDocument<Plan>;
 

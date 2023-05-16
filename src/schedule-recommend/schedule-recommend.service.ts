@@ -23,7 +23,7 @@ import { Needs } from './interfaces/needs.interface';
 import * as haversineDistance from 'haversine-distance';
 import { Duration } from 'luxon';
 
-import { LatLng } from 'src/interfaces/LatLng.interface';
+import { LatLng } from 'src/interfaces/lat-lng.interface';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
