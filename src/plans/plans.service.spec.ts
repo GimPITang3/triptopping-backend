@@ -15,6 +15,7 @@ const mockPlan = ({}): Plan => {
     numberOfMembers: 0,
     period: 10,
     budget: 1000,
+    loc: { lat: 0, lng: 0 },
     tags: [],
     createdAt: new Date(),
     updatedAt: new Date(),

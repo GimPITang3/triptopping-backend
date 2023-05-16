@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -12,6 +13,7 @@ import {
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
 import { PlansService } from './plans.service';
+import { ExcludePlacesDto } from './dto/exclude-places.dto';
 
 @Controller('plans')
 export class PlansController {
@@ -43,7 +45,6 @@ export class PlansController {
   // @UseGuards(JwtGuard)
   @Patch(':id')
   async update(@Body() updatePlanDto: UpdatePlanDto) {
-    // TODO:
     const plan = await this.plansService.update(updatePlanDto);
 
     return plan.toObject();
@@ -66,5 +67,11 @@ export class PlansController {
     const plan = await this.plansService.getDetails(id);
 
     return plan.toObject();
+  }
+
+  @Post(':id/excludes')
+  @HttpCode(200)
+  async excludePlaces(@Param('id') id: string, @Body() dto: ExcludePlacesDto) {
+    await this.plansService.excludePlaces(id, dto.placeIds);
   }
 }

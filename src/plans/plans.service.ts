@@ -122,4 +122,19 @@ export class PlansService {
 
     return plan;
   }
+
+  async excludePlaces(planId: string, placeIds: string[]) {
+    const plan = await this.plansModel.findOne({
+      planId,
+      deletedAt: undefined,
+    });
+
+    if (!plan) {
+      throw new PlanNotFoundError();
+    }
+
+    plan.excludes = Array.from(new Set(plan.excludes.concat(placeIds)));
+
+    await plan.save();
+  }
 }

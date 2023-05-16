@@ -23,12 +23,7 @@ import { Needs } from './interfaces/needs.interface';
 import * as haversineDistance from 'haversine-distance';
 import { Duration } from 'luxon';
 
-import { places } from './__tests__/places';
-
-interface LatLng {
-  lat: number;
-  lng: number;
-}
+import { LatLng } from 'src/interfaces/LatLng.interface';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -151,13 +146,8 @@ export class ScheduleRecommendService {
 
   /**
    * Retreive landmarks of city
-   *
-   * @param city Should be exact name of city
    */
-  async retreiveLandmarks(
-    city: string,
-    cityLoc: LatLng,
-  ): Promise<Partial<PlaceData>[]> {
+  async retreiveLandmarks(cityLoc: LatLng): Promise<Partial<PlaceData>[]> {
     const resp = await this.client.textSearch({
       params: {
         query: 'tourist places',
@@ -177,13 +167,10 @@ export class ScheduleRecommendService {
     return resp.data.results;
   }
 
-  async retreiveLodging(
-    city: string,
-    cityLoc: LatLng,
-  ): Promise<Partial<PlaceData>[]> {
+  async retreiveLodging(cityLoc: LatLng): Promise<Partial<PlaceData>[]> {
     const resp = await this.client.textSearch({
       params: {
-        query: `${city} lodging`,
+        query: 'lodging',
         language: Language.ko,
         location: cityLoc,
         key: this.key,
@@ -205,15 +192,7 @@ export class ScheduleRecommendService {
     return results;
   }
 
-  // TODO: temporal
   async retreiveCandidates(
-    _start: Place,
-    _end: Place,
-  ): Promise<Partial<PlaceData>[]> {
-    return places.slice();
-  }
-
-  async _retreiveCandidates(
     start: Place,
     end: Place,
   ): Promise<Partial<PlaceData>[]> {
@@ -391,17 +370,21 @@ export class ScheduleRecommendService {
         .map(() => []),
     );
 
-    // TODO: should get city name
-    const city = 'tokyo';
-    const cityLoc = await this.retreiveCityLocation(city);
-
-    const landmarks = await this.retreiveLandmarks(city, cityLoc);
-    const lodgings = await this.retreiveLodging(city, cityLoc);
-    // landmarks.sort((a, b) => b.user_ratings_total - a.user_ratings_total);
+    const landmarks = await this.retreiveLandmarks(plan.loc);
+    const lodgings = await this.retreiveLodging(plan.loc);
     lodgings.sort((a, b) => b.user_ratings_total - a.user_ratings_total);
 
     // Pickup lodging
     const lodging = lodgings[0];
+
+    // Exclude landmarks that the user does not want
+    landmarks.splice(
+      0,
+      landmarks.length,
+      ...landmarks.filter(
+        (landmark) => plan.excludes.includes(landmark.place_id) === false,
+      ),
+    );
 
     // Distribute landmarks
     const landmarksPerDay = this.splitToChunks(landmarks, lodging, plan.period);

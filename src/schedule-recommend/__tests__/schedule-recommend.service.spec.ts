@@ -6,20 +6,9 @@ import { GoogleMapsModule } from 'src/google-maps/google-maps.module';
 import { ScheduleRecommendService } from '../schedule-recommend.service';
 import { Plan } from 'src/plans/plan.schema';
 import { Types } from 'mongoose';
-import {
-  ItineraryDaily,
-  Place,
-} from 'src/plans/interfaces/itinerary.interface';
 
-import { places } from './places';
-
-import { Needs } from '../interfaces/needs.interface';
 import { Duration } from 'luxon';
-import {
-  AddressType,
-  LatLngLiteral,
-  PlaceData,
-} from '@googlemaps/google-maps-services-js';
+import { LatLngLiteral } from '@googlemaps/google-maps-services-js';
 
 describe('ScheduleRecommendService', () => {
   let service: ScheduleRecommendService;
@@ -49,7 +38,7 @@ describe('ScheduleRecommendService', () => {
   });
 
   it('should retreive landmarks', async () => {
-    const landmarks = await service.retreiveLandmarks(city, cityLoc);
+    const landmarks = await service.retreiveLandmarks(cityLoc);
 
     expect(landmarks.length).toBeGreaterThan(0);
 
@@ -66,7 +55,7 @@ describe('ScheduleRecommendService', () => {
   });
 
   it('should retreive lodgings', async () => {
-    const lodgings = await service.retreiveLodging(city, cityLoc);
+    const lodgings = await service.retreiveLodging(cityLoc);
 
     expect(lodgings.length).toBeGreaterThan(0);
 
@@ -95,6 +84,7 @@ describe('ScheduleRecommendService', () => {
         name: 'New trip',
         numberOfMembers: 0,
         tags: ['vacation', 'tokyo'],
+        loc: cityLoc,
         period: 3,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -132,146 +122,6 @@ describe('ScheduleRecommendService', () => {
       newPlan.routes.forEach((route) => {
         console.log(route[0]);
       });
-    });
-  });
-});
-
-describe.skip('ScheduleRecommendService', () => {
-  let service: ScheduleRecommendService;
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot({}), GoogleMapsModule],
-      providers: [ScheduleRecommendService],
-    }).compile();
-
-    service = module.get<ScheduleRecommendService>(ScheduleRecommendService);
-  });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
-
-  describe('Plan recommendation', () => {
-    let plan: Plan;
-    let candidates: Partial<PlaceData>[];
-
-    let start: Place;
-    let end: Place;
-
-    beforeEach(async () => {
-      plan = {
-        planId: '',
-        author: new Types.ObjectId(),
-        budget: 0,
-        itinerary: [],
-        members: [],
-        name: 'New trip',
-        numberOfMembers: 0,
-        tags: ['vacation'],
-        period: 3,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      candidates = places.slice();
-
-      const hotelPlaceId = 'ChIJ85hbBNOMGGARYgvauINiX18';
-
-      const hotelIndex = candidates.findIndex(
-        (place) => place.place_id === hotelPlaceId,
-      );
-      const hotel = candidates.splice(hotelIndex, 1)[0];
-
-      start = {
-        type: 'place',
-        time: Duration.fromObject({ hours: 6, minutes: 0 }).toMillis(),
-        details: hotel,
-      };
-
-      end = {
-        type: 'place',
-        time: Duration.fromObject({ hours: 22, minutes: 0 }).toMillis(),
-        details: hotel,
-      };
-    });
-
-    it.skip('should return candidates', async () => {
-      const candidates = await service.retreiveCandidates(start, end);
-
-      expect(candidates.length).toBeGreaterThan(0);
-    }, 10000);
-
-    it('should schedule between two schedules', async () => {
-      const needs: Needs = {
-        // food: 100,
-      };
-
-      const schedules = await service.scheduleBetween(
-        start,
-        end,
-        candidates.slice(),
-        needs,
-      );
-
-      expect(schedules.length).toBeGreaterThanOrEqual(2);
-    });
-
-    it('should get scheduled itinerary of a day', async () => {
-      const itineraryDaily: ItineraryDaily = [];
-      const newItineraryDaily = await service.scheduleDay(
-        plan,
-        start,
-        end,
-        candidates.slice(),
-        itineraryDaily,
-      );
-
-      expect(newItineraryDaily).toBeDefined();
-    });
-
-    it('should get new plan from existing plan', async () => {
-      const newPlan = await service.recommend(plan);
-
-      expect(newPlan).toBeDefined();
-      expect(newPlan.itinerary.length).toBeGreaterThan(0);
-
-      for (const itineraryDaily of newPlan.itinerary) {
-        expect(itineraryDaily).toBeDefined();
-
-        console.log(
-          itineraryDaily.map((daily) => {
-            if (daily.type === 'place') {
-              return daily.system.details.geometry.location;
-            } else {
-              return '';
-            }
-          }),
-        );
-
-        expect(itineraryDaily.length).toBeGreaterThan(0);
-      }
-    });
-
-    it.skip('asdf', async () => {
-      let types = candidates.flatMap((candidate) => candidate.types);
-      types = Array.from(new Set(types));
-
-      const establishments = candidates
-        .filter((candidate) =>
-          candidate.types.includes(AddressType.establishment),
-        )
-        .map((candidate) => candidate.name);
-
-      const interests = candidates
-        .filter((candidate) =>
-          candidate.types.includes(AddressType.point_of_interest),
-        )
-        .map((candidate) => candidate.name);
-
-      console.log(types);
-      console.log(establishments);
-      console.log(interests);
     });
   });
 });

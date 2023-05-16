@@ -1,8 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Schema as MongooseSchema, Types } from 'mongoose';
+import { DirectionsRoute } from '@googlemaps/google-maps-services-js';
 
 import { Itinerary } from './interfaces/itinerary.interface';
-import { DirectionsRoute } from '@googlemaps/google-maps-services-js';
+import { LatLng } from 'src/interfaces/LatLng.interface';
 
 export type PlanDocument = HydratedDocument<Plan>;
 
@@ -30,6 +31,9 @@ export class Plan {
   @Prop({ required: true })
   period: number;
 
+  @Prop({ required: true })
+  loc: LatLng;
+
   @Prop()
   budget: number;
 
@@ -41,6 +45,10 @@ export class Plan {
 
   @Prop()
   routes?: DirectionsRoute[][];
+
+  /** Place ids */
+  @Prop()
+  excludes?: string[];
 
   @Prop()
   routesCalculatedAt?: Date;

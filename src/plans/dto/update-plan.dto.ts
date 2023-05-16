@@ -1,5 +1,12 @@
 import { Type } from 'class-transformer';
-import { IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsDate,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import { LatLngDto } from './lat-lng.dto';
 
 export class UpdatePlanDto {
   @IsString()
@@ -27,4 +34,7 @@ export class UpdatePlanDto {
   @IsDate()
   @IsOptional()
   startDate?: Date;
+
+  @ValidateNested()
+  loc?: LatLngDto;
 }
