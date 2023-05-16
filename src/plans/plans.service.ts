@@ -23,7 +23,11 @@ export class PlansService {
   ) {}
 
   async findAll(): Promise<PlanDocument[]> {
-    const plans = await this.plansModel.find({ deletedAt: undefined }).exec();
+    const plans = await this.plansModel
+      .find({ deletedAt: undefined })
+      .select('-routes -itinerary')
+      .exec();
+
     return plans;
   }
 
