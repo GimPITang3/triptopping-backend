@@ -6,29 +6,33 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
+
 import { LatLngDto } from './lat-lng.dto';
+import { Plan } from '../plan.schema';
+import { Itinerary } from '../interfaces/itinerary.interface';
 
-export class UpdatePlanDto {
-  @IsString()
-  planId: string;
+type IUpdatePlanDto = Pick<
+  Partial<InstanceType<typeof Plan>>,
+  'name' | 'budget' | 'tags' | 'period' | 'startDate' | 'loc' | 'itinerary'
+>;
 
+export class UpdatePlanDto implements IUpdatePlanDto {
   @IsString()
-  name: string;
+  @IsOptional()
+  name?: string;
 
   @IsNumber()
-  numberOfMembers: number;
+  @IsOptional()
+  @Type(() => Number)
+  budget?: number;
 
   @IsString({ each: true })
-  members: string[];
+  @IsOptional()
+  tags?: string[];
 
   @IsNumber()
-  budget: number;
-
-  @IsString({ each: true })
-  tags: string[];
-
-  @IsNumber()
-  period: number;
+  @IsOptional()
+  period?: number;
 
   @Type(() => Date)
   @IsDate()
@@ -36,5 +40,9 @@ export class UpdatePlanDto {
   startDate?: Date;
 
   @ValidateNested()
+  @IsOptional()
   loc?: LatLngDto;
+
+  @IsOptional()
+  itinerary?: Itinerary;
 }

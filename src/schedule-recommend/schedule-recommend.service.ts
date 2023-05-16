@@ -145,14 +145,18 @@ export class ScheduleRecommendService {
    * Retreive landmarks of city
    */
   async retreiveLandmarks(cityLoc: LatLng): Promise<Partial<PlaceData>[]> {
-    const resp = await this.client.textSearch({
-      params: {
-        query: 'tourist places',
-        language: Language.ko,
-        location: cityLoc,
-        key: this.key,
-      },
-    });
+    const resp = await this.client
+      .textSearch({
+        params: {
+          query: 'tourist places',
+          language: Language.ko,
+          location: cityLoc,
+          key: this.key,
+        },
+      })
+      .catch((e) => {
+        throw new Error('Error on retreive landmarks: ' + e);
+      });
 
     if (resp.data.status !== Status.OK) {
       throw new Error(`status is not okay: ${resp.data.error_message}`);
@@ -165,14 +169,18 @@ export class ScheduleRecommendService {
   }
 
   async retreiveLodging(cityLoc: LatLng): Promise<Partial<PlaceData>[]> {
-    const resp = await this.client.textSearch({
-      params: {
-        query: 'lodging',
-        language: Language.ko,
-        location: cityLoc,
-        key: this.key,
-      },
-    });
+    const resp = await this.client
+      .textSearch({
+        params: {
+          query: 'lodging',
+          language: Language.ko,
+          location: cityLoc,
+          key: this.key,
+        },
+      })
+      .catch((e) => {
+        throw new Error('error on retreive lodging: ' + e);
+      });
 
     if (resp.data.status !== Status.OK) {
       throw new Error(`status is not okay: ${resp.data.error_message}`);
@@ -213,25 +221,29 @@ export class ScheduleRecommendService {
     const maxprice: number | undefined = undefined;
     const placeType: AddressType | undefined = undefined;
     while (true) {
-      const resp = await this.client.placesNearby({
-        params: {
-          key: this.key,
-          location: midLatLng,
-          language: Language.ko,
-          ...(pagetoken ? { pagetoken } : {}),
-          ...(minprice ? { minprice } : {}),
-          ...(maxprice ? { maxprice } : {}),
-          ...(placeType ? { type: placeType } : {}),
-          radius: radius,
-        },
-        raxConfig: {
-          retryDelay: 2000,
-          shouldRetry: (_err) => {
-            return true;
+      const resp = await this.client
+        .placesNearby({
+          params: {
+            key: this.key,
+            location: midLatLng,
+            language: Language.ko,
+            ...(pagetoken ? { pagetoken } : {}),
+            ...(minprice ? { minprice } : {}),
+            ...(maxprice ? { maxprice } : {}),
+            ...(placeType ? { type: placeType } : {}),
+            radius: radius,
           },
-          backoffType: 'static',
-        },
-      });
+          raxConfig: {
+            retryDelay: 2000,
+            shouldRetry: (_err) => {
+              return true;
+            },
+            backoffType: 'static',
+          },
+        })
+        .catch((e) => {
+          throw new Error('error on retreive candidates: ' + e);
+        });
 
       const { next_page_token, results, status, error_message } = resp.data;
 

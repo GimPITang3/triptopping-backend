@@ -59,25 +59,22 @@ export class PlansService {
     return plan;
   }
 
-  async update(updatePlanDto: UpdatePlanDto): Promise<PlanDocument> {
-    const planId = updatePlanDto.planId;
+  async update(
+    planId: string,
+    updatePlanDto: UpdatePlanDto,
+  ): Promise<PlanDocument> {
     const plan = await this.plansModel
-      .findOne({ planId, deletedAt: undefined })
+      .findOneAndUpdate(
+        { planId, deletedAt: undefined },
+        {
+          ...updatePlanDto,
+        },
+      )
       .exec();
 
     if (!plan) {
       throw new PlanNotFoundError();
     }
-
-    plan.name = updatePlanDto.name;
-    plan.numberOfMembers = updatePlanDto.numberOfMembers;
-
-    plan.members = updatePlanDto.members.map((e) => new Types.ObjectId(e));
-    plan.budget = updatePlanDto.budget;
-    plan.tags = updatePlanDto.tags;
-
-    plan.period = updatePlanDto.period;
-    if (updatePlanDto.startDate) plan.startDate = updatePlanDto.startDate;
 
     await this.scheduleRecommend.recommend(plan);
 

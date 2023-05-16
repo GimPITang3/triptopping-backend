@@ -44,8 +44,8 @@ export class PlansController {
 
   // @UseGuards(JwtGuard)
   @Patch(':id')
-  async update(@Body() updatePlanDto: UpdatePlanDto) {
-    const plan = await this.plansService.update(updatePlanDto);
+  async update(@Param('id') id: string, @Body() updatePlanDto: UpdatePlanDto) {
+    const plan = await this.plansService.update(id, updatePlanDto);
 
     return plan.toObject();
   }
@@ -53,6 +53,7 @@ export class PlansController {
   // @UseGuards(JwtGuard)
   @Put(':id')
   async replace(@Body() _replacePlanDto: any) {
+    // TODO:
     return;
   }
 
