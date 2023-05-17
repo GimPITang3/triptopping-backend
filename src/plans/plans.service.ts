@@ -69,6 +69,9 @@ export class PlansService {
         {
           ...updatePlanDto,
         },
+        {
+          returnOriginal: false,
+        },
       )
       .exec();
 

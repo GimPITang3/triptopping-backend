@@ -101,7 +101,6 @@ export class ScheduleRecommendService {
             selected[i] = true;
             result[i].unshift(result[i].splice(j, 1)[0]);
             completeSelect = true;
-            console.log(`[Already] ${place.name} is selected to ${i} days`);
             break;
           }
         }
@@ -136,7 +135,6 @@ export class ScheduleRecommendService {
       }
       result[idx].unshift({ place, isManaul: false });
       selected[idx] = true;
-      console.log(`[New] ${place.name} is selected to ${idx} days`);
     }
 
     const candidates = sortedPlaces.filter(
