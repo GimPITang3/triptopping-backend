@@ -50,8 +50,16 @@ export class ScheduleRecommendService {
     array: Partial<PlaceData>[],
     center: Partial<PlaceData>,
     parts: number,
+    itineray: ItineraryDaily[],
   ): Partial<PlaceData>[][] {
+    // sorting...
     const result: Partial<PlaceData>[][] = [];
+    itineray.forEach((day, idx) => {
+      result[idx] = day
+        .filter((slot) => slot.type === 'place' && slot.manual)
+        .map((slot) => slot.manual.details as Partial<PlaceData>);
+    });
+
     interface PlaceWithDistance extends Partial<PlaceData> {
       distance: number;
     }
@@ -64,12 +72,57 @@ export class ScheduleRecommendService {
         ),
       };
     });
-    sortedPlaces.sort((a, b) => b.distance - a.distance);
-    sortedPlaces.sort((a, b) => b.user_ratings_total - a.user_ratings_total);
+    sortedPlaces.sort((a, b) => a.distance - b.distance);
+    sortedPlaces.sort((a, b) => a.user_ratings_total - b.user_ratings_total);
 
-    for (let i = 0; i < parts; i++) {
-      result[i] = sortedPlaces.splice(0, 1);
+    // distributing...
+    const selected = result.map(() => false);
+    while (selected.findIndex((value) => value === false) !== -1) {
+      let completeSelect = false;
+      console.log(selected);
+      const place = sortedPlaces.pop();
+      if (!place) break;
+      // 이미 끝 점을 넣어 놓은 경우
+      for (let i = 0; i < result.length; i++) {
+        for (let j = 0; j < result[i].length; j++) {
+          if (result[i][j].place_id === place.place_id) {
+            if (selected[i]) {
+              completeSelect = true;
+              break;
+            }
+            selected[i] = true;
+            result[i].unshift(result[i].splice(j, 1)[0]);
+            completeSelect = true;
+            break;
+          }
+        }
+      }
+      if (completeSelect) {
+        continue;
+      }
+
+      // 끝 점이 없는 경우 -> 이 끝 점이 들어가 있는 것 중에서 가장 어울리는 곳으로 넣어야함.
+      let hMinDist = Number.MAX_SAFE_INTEGER;
+      let idx = 0;
+      for (let i = 0; i < result.length; i++) {
+        if (selected[i]) continue;
+        let hDist = result[i].reduce(
+          (acc, cur) =>
+            acc +
+            haversineDistance(center.geometry.location, cur.geometry.location) +
+            haversineDistance(cur.geometry.location, place.geometry.location),
+          0,
+        );
+        if (hDist === 0) hDist = Number.MAX_SAFE_INTEGER - 1;
+        if (hDist < hMinDist) {
+          hMinDist = hDist;
+          idx = i;
+        }
+      }
+      result[idx].unshift(place);
+      selected[idx] = true;
     }
+
     let day = 0;
     while (sortedPlaces.length > 0) {
       let hMinDist = Number.MAX_SAFE_INTEGER;
@@ -105,8 +158,9 @@ export class ScheduleRecommendService {
     array: Partial<PlaceData>[],
     center: Partial<PlaceData>,
     parts: number,
+    itinerary: ItineraryDaily[],
   ): Partial<PlaceData>[][] {
-    const result = this.splitByDistance(array, center, parts);
+    const result = this.splitByDistance(array, center, parts, itinerary);
 
     return result;
   }
@@ -373,11 +427,13 @@ export class ScheduleRecommendService {
   async recommend(plan: Plan): Promise<Plan> {
     // Make itinerary array to have exact length
     plan.itinerary = plan.itinerary.slice(0, plan.period);
-    plan.itinerary = plan.itinerary.concat(
-      Array(plan.period - plan.itinerary.length)
-        .fill(undefined)
-        .map(() => []),
-    );
+    if (plan.itinerary.length < plan.period) {
+      plan.itinerary = plan.itinerary.concat(
+        Array(plan.period - plan.itinerary.length)
+          .fill(undefined)
+          .map(() => []),
+      );
+    }
 
     // Retrive Landmarks and lodgings
     const landmarks = await this.retreiveLandmarks(plan.loc);
@@ -388,37 +444,49 @@ export class ScheduleRecommendService {
     const lodging = lodgings[0];
 
     // Exclude landmarks that the user does not want
-    landmarks.splice(
-      0,
-      landmarks.length,
-      ...landmarks.filter(
-        (landmark) => plan.excludes.includes(landmark.place_id) === false,
-      ),
+    console.log(plan.excludes);
+    const excludedLandmarks = landmarks.filter(
+      (landmark) => !plan.excludes.includes(landmark.place_id),
     );
-
+    // landmarks.splice(
+    //   0,
+    //   landmarks.length,
+    //   ...landmarks.filter(
+    //     (landmark) => plan.excludes.includes(landmark.place_id) === false,
+    //   ),
+    // );
     // Exclude landmarks which are already in the schedule
-    const placeIds = plan.itinerary.flatMap((daily) =>
-      daily
-        .map((schedule) => {
-          const flattenSchedule = flattenScheduleSlot(schedule);
-          if (flattenSchedule.type === 'place') {
-            return flattenSchedule.details?.place_id;
-          } else {
-            return undefined;
-          }
-        })
-        .filter((schedule) => schedule !== undefined),
-    );
-    landmarks.splice(
-      0,
-      landmarks.length,
-      ...landmarks.filter(
-        (landmark) => placeIds.includes(landmark.place_id) === false,
-      ),
-    );
+    // const placeIds = plan.itinerary.flatMap((daily) =>
+    //   daily
+    //     .map((schedule) => {
+    //       const flattenSchedule = flattenScheduleSlot(schedule);
+    //       if (flattenSchedule.type === 'place') {
+    //         return flattenSchedule.details?.place_id;
+    //       } else {
+    //         return undefined;
+    //       }
+    //     })
+    //     .filter((schedule) => schedule !== undefined),
+    // );
+    // landmarks.splice(
+    //   0,
+    //   landmarks.length,
+    //   ...landmarks.filter(
+    //     (landmark) => placeIds.includes(landmark.place_id) === false,
+    //   ),
+    // );
 
+    console.log(
+      '2',
+      excludedLandmarks.map((landmark) => landmark.name),
+    );
     // Distribute landmarks
-    const landmarksPerDay = this.splitToChunks(landmarks, lodging, plan.period);
+    const landmarksPerDay = this.splitToChunks(
+      excludedLandmarks,
+      lodging,
+      plan.period,
+      plan.itinerary,
+    );
 
     // Plan daily itinerary
     plan.itinerary.forEach((daily, dayIndex) => {
