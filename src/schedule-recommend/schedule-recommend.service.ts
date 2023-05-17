@@ -38,6 +38,12 @@ function flattenScheduleSlot(schedule: ScheduleSlot): ScheduleType {
   };
 }
 
+// TODO: change to other place...
+interface RecommendPlace {
+  isManaul: boolean;
+  place: Partial<PlaceData>;
+}
+
 @Injectable()
 export class ScheduleRecommendService {
   constructor(
@@ -51,13 +57,16 @@ export class ScheduleRecommendService {
     center: Partial<PlaceData>,
     parts: number,
     itineray: ItineraryDaily[],
-  ): Partial<PlaceData>[][] {
+  ): RecommendPlace[][] {
     // sorting...
-    const result: Partial<PlaceData>[][] = [];
+    const result: RecommendPlace[][] = [];
     itineray.forEach((day, idx) => {
       result[idx] = day
         .filter((slot) => slot.type === 'place' && slot.manual)
-        .map((slot) => slot.manual.details as Partial<PlaceData>);
+        .map((slot) => ({
+          place: slot.manual.details as Partial<PlaceData>,
+          isManaul: true,
+        }));
     });
 
     interface PlaceWithDistance extends Partial<PlaceData> {
@@ -79,13 +88,12 @@ export class ScheduleRecommendService {
     const selected = result.map(() => false);
     while (selected.findIndex((value) => value === false) !== -1) {
       let completeSelect = false;
-      console.log(selected);
       const place = sortedPlaces.pop();
       if (!place) break;
       // 이미 끝 점을 넣어 놓은 경우
       for (let i = 0; i < result.length; i++) {
         for (let j = 0; j < result[i].length; j++) {
-          if (result[i][j].place_id === place.place_id) {
+          if (result[i][j].place.place_id === place.place_id) {
             if (selected[i]) {
               completeSelect = true;
               break;
@@ -93,6 +101,7 @@ export class ScheduleRecommendService {
             selected[i] = true;
             result[i].unshift(result[i].splice(j, 1)[0]);
             completeSelect = true;
+            console.log(`[Already] ${place.name} is selected to ${i} days`);
             break;
           }
         }
@@ -109,8 +118,14 @@ export class ScheduleRecommendService {
         let hDist = result[i].reduce(
           (acc, cur) =>
             acc +
-            haversineDistance(center.geometry.location, cur.geometry.location) +
-            haversineDistance(cur.geometry.location, place.geometry.location),
+            haversineDistance(
+              center.geometry.location,
+              cur.place.geometry.location,
+            ) +
+            haversineDistance(
+              cur.place.geometry.location,
+              place.geometry.location,
+            ),
           0,
         );
         if (hDist === 0) hDist = Number.MAX_SAFE_INTEGER - 1;
@@ -119,28 +134,38 @@ export class ScheduleRecommendService {
           idx = i;
         }
       }
-      result[idx].unshift(place);
+      result[idx].unshift({ place, isManaul: false });
       selected[idx] = true;
+      console.log(`[New] ${place.name} is selected to ${idx} days`);
     }
 
+    const candidates = sortedPlaces.filter(
+      (place) =>
+        !result
+          .flatMap((day) => day.map((place) => place.place.place_id))
+          .includes(place.place_id),
+    );
+
     let day = 0;
-    while (sortedPlaces.length > 0) {
+    while (candidates.length > 0) {
       let hMinDist = Number.MAX_SAFE_INTEGER;
       let minIdx = -1;
-      sortedPlaces.forEach((place, idx) => {
+      candidates.forEach((place, idx) => {
         const hDist =
           haversineDistance(place.geometry.location, center.geometry.location) +
           haversineDistance(
             place.geometry.location,
-            result[day][0].geometry.location,
+            result[day][0].place.geometry.location,
           );
         if (hDist < hMinDist) {
           hMinDist = hDist;
           minIdx = idx;
         }
       });
-      result[day].push(sortedPlaces.splice(minIdx, 1)[0]);
-
+      result[day].push({
+        place: candidates.splice(minIdx, 1)[0],
+        isManaul: false,
+      });
       day++;
       if (day >= parts) {
         day -= parts;
@@ -150,7 +175,6 @@ export class ScheduleRecommendService {
     for (let i = 0; i < parts; i++) {
       result[i].reverse();
     }
-
     return result;
   }
 
@@ -159,7 +183,7 @@ export class ScheduleRecommendService {
     center: Partial<PlaceData>,
     parts: number,
     itinerary: ItineraryDaily[],
-  ): Partial<PlaceData>[][] {
+  ): RecommendPlace[][] {
     const result = this.splitByDistance(array, center, parts, itinerary);
 
     return result;
@@ -444,41 +468,8 @@ export class ScheduleRecommendService {
     const lodging = lodgings[0];
 
     // Exclude landmarks that the user does not want
-    console.log(plan.excludes);
     const excludedLandmarks = landmarks.filter(
       (landmark) => !plan.excludes.includes(landmark.place_id),
-    );
-    // landmarks.splice(
-    //   0,
-    //   landmarks.length,
-    //   ...landmarks.filter(
-    //     (landmark) => plan.excludes.includes(landmark.place_id) === false,
-    //   ),
-    // );
-    // Exclude landmarks which are already in the schedule
-    // const placeIds = plan.itinerary.flatMap((daily) =>
-    //   daily
-    //     .map((schedule) => {
-    //       const flattenSchedule = flattenScheduleSlot(schedule);
-    //       if (flattenSchedule.type === 'place') {
-    //         return flattenSchedule.details?.place_id;
-    //       } else {
-    //         return undefined;
-    //       }
-    //     })
-    //     .filter((schedule) => schedule !== undefined),
-    // );
-    // landmarks.splice(
-    //   0,
-    //   landmarks.length,
-    //   ...landmarks.filter(
-    //     (landmark) => placeIds.includes(landmark.place_id) === false,
-    //   ),
-    // );
-
-    console.log(
-      '2',
-      excludedLandmarks.map((landmark) => landmark.name),
     );
     // Distribute landmarks
     const landmarksPerDay = this.splitToChunks(
@@ -490,44 +481,67 @@ export class ScheduleRecommendService {
 
     // Plan daily itinerary
     plan.itinerary.forEach((daily, dayIndex) => {
-      const from: Place = {
+      const from: ScheduleSlot = {
         type: 'place',
-        time: Duration.fromObject({ hours: 7, minutes: 0 }).toMillis(),
-        details: lodging,
+        system: {
+          details: lodging,
+        },
       };
-      const to: Place = {
+      const to: ScheduleSlot = {
         type: 'place',
-        time: Duration.fromObject({ hours: 22, minutes: 0 }).toMillis(),
-        details: lodging,
+        system: {
+          details: lodging,
+        },
       };
 
       const schedules: ScheduleSlot[] = [
         from,
-        ...landmarksPerDay[dayIndex].map<Place>((landmark, i) => ({
-          type: 'place',
-          time: Duration.fromObject({
-            hours:
-              (22 - 1 - (7 + 1)) * (i / landmarksPerDay[dayIndex].length) +
-              7 +
-              1,
-            minutes: 0,
-          }).toMillis(),
-          details: landmark,
-        })),
+        ...landmarksPerDay[dayIndex].map<ScheduleSlot>((landmarks, i) => {
+          const data: ScheduleSlot = {
+            type: 'place',
+          };
+          data[landmarks.isManaul ? 'manual' : 'system'] = {
+            time: Duration.fromObject({
+              hours:
+                (22 - 1 - (7 + 1)) * (i / landmarksPerDay[dayIndex].length) +
+                7 +
+                1,
+              minutes: 0,
+            }).toMillis(),
+            details: landmarks.place,
+          };
+          return data;
+        }),
         to,
-      ].map<ScheduleSlot>((place) => ({
-        type: 'place',
-        system: place,
-      }));
+      ];
 
-      const userAdjustedSchedules: ScheduleSlot[] = daily.filter(
-        (schedule) => schedule.manual && !isEmptyObject(schedule.manual),
-      );
+      // const schedules: ScheduleSlot[] = [
+      //   from,
+      //   ...landmarksPerDay[dayIndex].map<Place>((landmark, i) => ({
+      //     type: 'place',
+      //     time: Duration.fromObject({
+      //       hours:
+      //         (22 - 1 - (7 + 1)) * (i / landmarksPerDay[dayIndex].length) +
+      //         7 +
+      //         1,
+      //       minutes: 0,
+      //     }).toMillis(),
+      //     details: landmark.place,
+      //   })),
+      //   to,
+      // ].map<ScheduleSlot>((place) => ({
+      //   type: 'place',
+      //   system: place,
+      // }));
+
+      // const userAdjustedSchedules: ScheduleSlot[] = daily.filter(
+      //   (schedule) => schedule.manual && !isEmptyObject(schedule.manual),
+      // );
 
       // Remove all schedules
       daily.splice(0, daily.length);
 
-      daily.splice(0, 0, ...schedules, ...userAdjustedSchedules);
+      daily.splice(0, 0, ...schedules);
     });
 
     return plan;
