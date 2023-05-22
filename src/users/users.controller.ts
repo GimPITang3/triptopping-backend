@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtGuard } from 'src/auth/guards/jwt.guard';
 
 @Controller('users')
 export class UsersController {
@@ -15,6 +16,7 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtGuard)
   async update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
     const user = await this.usersService.update(id, dto);
 
