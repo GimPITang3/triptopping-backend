@@ -20,13 +20,14 @@ export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserDocument> {
-    const createdUser = new this.userModel(createUserDto);
-    createdUser.userId = createId();
-    createdUser.google = createUserDto.google;
+    const createdUser = new this.userModel({
+      userId: createId(),
+      ...createUserDto,
+    });
 
     const user = await createdUser.save();
 
-    this.logger.log(user);
+    this.logger.verbose(user);
 
     return user;
   }
@@ -53,5 +54,11 @@ export class UsersService {
 
   async findAll(): Promise<UserDocument[]> {
     return this.userModel.find().exec();
+  }
+
+  async existsByGoogleId(id: string): Promise<boolean> {
+    const result = await this.userModel.exists({ 'google.id': id });
+
+    return result !== null;
   }
 }

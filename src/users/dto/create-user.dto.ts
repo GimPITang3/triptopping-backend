@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsEmail, IsString, ValidateNested } from 'class-validator';
 
 class GoogleProvider {
   @IsString()
@@ -7,12 +7,13 @@ class GoogleProvider {
 
 export class CreateUserDto {
   @IsEmail()
-  @IsOptional()
-  email?: string;
+  email: string;
 
   @IsString()
-  @IsOptional()
-  nickname?: string;
+  nickname: string;
+
+  @IsString()
+  introduce: string;
 
   @ValidateNested()
   google?: GoogleProvider;

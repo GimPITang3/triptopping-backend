@@ -1,13 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Request } from 'express';
 
 import { JwtPayload } from 'src/auth/jwt-payload.interface';
-import { IOAuthUser } from './stratagies/google-oauth-20.strategy';
 
-import { UserNotFoundError, UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/users.service';
 import { UserDocument } from 'src/users/user.schema';
+import { GoogleSignupDto } from './dto/google-signup.dto';
+
+export class UserAlreadyExistError extends Error {
+  constructor() {
+    super('User account does already exist.');
+  }
+}
 
 @Injectable()
 export class AuthService {
@@ -17,18 +22,14 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async loginWithGoogle(request: Request & { user: IOAuthUser }) {
-    const user: UserDocument = await this.usersService
-      .findByGoogleId(request.user.providerId)
-      .catch(async (e) => {
-        if (e instanceof UserNotFoundError) {
-          return await this.usersService.create({
-            google: { id: request.user.providerId },
-          });
-        } else {
-          throw e;
-        }
-      });
+  /**
+   *
+   * @param id An identifier for the user, unique among all Google accounts and
+   * never reused. A Google account can have multiple emails at different points
+   * in time, but the sub value is never changed.
+   */
+  async loginWithGoogle(id: string) {
+    const user: UserDocument = await this.usersService.findByGoogleId(id);
 
     const accessToken = this.jwtService.sign(
       <JwtPayload>{
@@ -43,5 +44,22 @@ export class AuthService {
     );
 
     return { accessToken, user };
+  }
+
+  async registerWithGoogle(id: string, dto: GoogleSignupDto) {
+    const exists = await this.usersService.existsByGoogleId(id);
+
+    if (exists) {
+      throw new UserAlreadyExistError();
+    }
+
+    await this.usersService.create({
+      google: { id: id },
+      email: dto.email,
+      nickname: dto.nickname,
+      introduce: dto.introduce,
+    });
+
+    return await this.loginWithGoogle(id);
   }
 }
