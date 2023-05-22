@@ -6,6 +6,7 @@ import { User, UserDocument } from './user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 
 import { createId } from '@paralleldrive/cuid2';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 export class UserNotFoundError extends Error {
   constructor() {
@@ -33,7 +34,9 @@ export class UsersService {
   }
 
   async findByUserId(id: string): Promise<UserDocument> {
-    const user = await this.userModel.findOne({ userId: id }).exec();
+    const user = await this.userModel
+      .findOne({ userId: id, deletedAt: undefined })
+      .exec();
 
     if (!user) {
       throw new UserNotFoundError();
@@ -43,7 +46,9 @@ export class UsersService {
   }
 
   async findByGoogleId(id: string): Promise<UserDocument> {
-    const user = await this.userModel.findOne({ 'google.id': id }).exec();
+    const user = await this.userModel
+      .findOne({ 'google.id': id, deletedAt: undefined })
+      .exec();
 
     if (!user) {
       throw new UserNotFoundError();
@@ -57,8 +62,30 @@ export class UsersService {
   }
 
   async existsByGoogleId(id: string): Promise<boolean> {
-    const result = await this.userModel.exists({ 'google.id': id });
+    const result = await this.userModel.exists({
+      'google.id': id,
+      deletedAt: undefined,
+    });
 
     return result !== null;
+  }
+
+  async update(id: string, dto: UpdateUserDto): Promise<UserDocument> {
+    const user = await this.userModel.findOneAndUpdate(
+      {
+        userId: id,
+        deletedAt: undefined,
+      },
+      {
+        ...dto,
+      },
+      { returnOriginal: false },
+    );
+
+    if (!user) {
+      throw new UserNotFoundError();
+    }
+
+    return user;
   }
 }
