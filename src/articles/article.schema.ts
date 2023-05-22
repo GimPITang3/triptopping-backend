@@ -23,6 +23,9 @@ export class Article {
   @Prop({ isRequired: true })
   title: string;
 
+  @Prop({ unique: true })
+  articleId: string;
+
   @Prop({ isRequired: true })
   content: string;
 
@@ -37,6 +40,9 @@ export class Article {
 
   @Prop()
   updatedAt: Date;
+
+  @Prop()
+  deletedAt?: Date;
 }
 
 export const ArticleSchema = SchemaFactory.createForClass(Article);
