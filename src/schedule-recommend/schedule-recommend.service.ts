@@ -181,6 +181,9 @@ export class ScheduleRecommendService {
           day -= parts;
         }
       }
+      if (result.every((day) => day.length >= 5)) {
+        break;
+      }
     }
 
     for (let i = 0; i < parts; i++) {
@@ -560,7 +563,6 @@ export class ScheduleRecommendService {
     lodgings.sort((a, b) => b.user_ratings_total - a.user_ratings_total);
     const lodging = lodgings[0];
     const airport = airports[0];
-    console.log(airport);
 
     // Exclude landmarks that the user does not want
     const excludedLandmarks = landmarks.filter(
