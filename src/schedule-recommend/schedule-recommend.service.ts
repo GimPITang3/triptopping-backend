@@ -25,6 +25,8 @@ import { Duration } from 'luxon';
 
 import { LatLng } from 'src/interfaces/lat-lng.interface';
 import { isEmptyObject } from 'src/utils/is-empty-object.util';
+import { v2 } from '@google-cloud/translate';
+import { TranslatePlaceData } from './interfaces/translated-place-data.interface';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -50,6 +52,7 @@ export class ScheduleRecommendService {
     private readonly client: Client,
     @Inject(GOOGLE_MAPS_ACCESS_KEY_TOKEN)
     private readonly key: string,
+    private readonly translate: v2.Translate,
   ) {}
 
   splitByDistance(
@@ -220,7 +223,9 @@ export class ScheduleRecommendService {
   /**
    * Retreive landmarks of city
    */
-  async retreiveLandmarks(cityLoc: LatLng): Promise<Partial<PlaceData>[]> {
+  async retreiveLandmarks(
+    cityLoc: LatLng,
+  ): Promise<Partial<TranslatePlaceData>[]> {
     const resp = await this.client
       .textSearch({
         params: {
@@ -241,10 +246,27 @@ export class ScheduleRecommendService {
       throw new Error('no results');
     }
 
-    return resp.data.results;
+    const promises = resp.data.results.map(
+      async (place: Partial<TranslatePlaceData>) => {
+        let [translations] = await this.translate.translate(place.name, 'ko');
+
+        translations = Array.isArray(translations)
+          ? translations[0]
+          : translations;
+
+        place.translated_name = translations;
+        return place;
+      },
+    );
+
+    const translatedData = await Promise.all(promises);
+
+    return translatedData;
   }
 
-  async retreiveLodging(cityLoc: LatLng): Promise<Partial<PlaceData>[]> {
+  async retreiveLodging(
+    cityLoc: LatLng,
+  ): Promise<Partial<TranslatePlaceData>[]> {
     const resp = await this.client
       .textSearch({
         params: {
@@ -270,7 +292,69 @@ export class ScheduleRecommendService {
       throw new Error('no results');
     }
 
-    return results;
+    const promises = resp.data.results.map(
+      async (place: Partial<TranslatePlaceData>) => {
+        let [translations] = await this.translate.translate(place.name, 'ko');
+
+        translations = Array.isArray(translations)
+          ? translations[0]
+          : translations;
+
+        place.translated_name = translations;
+        return place;
+      },
+    );
+
+    const translatedData = await Promise.all(promises);
+
+    return translatedData;
+  }
+
+  async retreiveAirport(
+    cityLoc: LatLng,
+  ): Promise<Partial<TranslatePlaceData>[]> {
+    const resp = await this.client
+      .textSearch({
+        params: {
+          // type: AddressType.airport,
+          query: 'airport',
+          language: Language.ko,
+          location: cityLoc,
+          key: this.key,
+        },
+      })
+      .catch((e) => {
+        throw new Error('error on retreive airport: ' + e);
+      });
+
+    if (resp.data.status !== Status.OK) {
+      throw new Error(`status is not okay: ${resp.data.error_message}`);
+    }
+
+    const results = resp.data.results.filter((place) =>
+      place.types.includes(AddressType.airport),
+    );
+
+    if (results.length == 0) {
+      throw new Error('no results');
+    }
+
+    const promises = resp.data.results.map(
+      async (place: Partial<TranslatePlaceData>) => {
+        let [translations] = await this.translate.translate(place.name, 'ko');
+
+        translations = Array.isArray(translations)
+          ? translations[0]
+          : translations;
+
+        place.translated_name = translations;
+        return place;
+      },
+    );
+
+    const translatedData = await Promise.all(promises);
+
+    return translatedData;
   }
 
   async retreiveCandidates(
@@ -460,10 +544,13 @@ export class ScheduleRecommendService {
     // Retrive Landmarks and lodgings
     const landmarks = await this.retreiveLandmarks(plan.loc);
     const lodgings = await this.retreiveLodging(plan.loc);
+    const airports = await this.retreiveAirport(plan.loc);
 
     // Pickup best lodging
     lodgings.sort((a, b) => b.user_ratings_total - a.user_ratings_total);
     const lodging = lodgings[0];
+    const airport = airports[0];
+    console.log(airport);
 
     // Exclude landmarks that the user does not want
     const excludedLandmarks = landmarks.filter(
@@ -482,13 +569,13 @@ export class ScheduleRecommendService {
       const from: ScheduleSlot = {
         type: 'place',
         system: {
-          details: lodging,
+          details: dayIndex === 0 ? airport : lodging,
         },
       };
       const to: ScheduleSlot = {
         type: 'place',
         system: {
-          details: lodging,
+          details: dayIndex === plan.itinerary.length - 1 ? airport : lodging,
         },
       };
 
