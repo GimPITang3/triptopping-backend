@@ -4,13 +4,15 @@ import { Model } from 'mongoose';
 
 import { createId } from '@paralleldrive/cuid2';
 
-import { Article, ArticleDocument } from './article.schema';
+import { Article, ArticleDocument, Comment } from './article.schema';
 import { User } from 'src/users/user.schema';
 
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { PaginationOptionsDto } from 'src/pagination/pagination-options.dto';
 import { PaginationResponseDto } from 'src/pagination/pagination-response.dto';
+import { CreateCommentDto } from './dto/create-comment.dto';
+import { UpdateCommentDto } from './dto/update-comment.dto';
 
 export class ArticleNotFoundError extends Error {
   constructor() {
@@ -30,8 +32,8 @@ export class ArticlesService {
   ): Promise<PaginationResponseDto<Article>> {
     const query = this.articleModel.find({}).sort({ createdAt: 'desc' });
 
-    const total = await query.count().exec();
-    const articles = await query.skip(dto.skip).limit(dto.limit).exec();
+    const total = await query.clone().count().exec();
+    const articles = await query.clone().skip(dto.skip).limit(dto.limit).exec();
 
     return {
       items: articles.map((article) => article.toObject()),
@@ -44,6 +46,8 @@ export class ArticlesService {
   async findById(id: string): Promise<ArticleDocument> {
     const article = await this.articleModel
       .findOne({ articleId: id, deletedAt: undefined })
+      .populate('author')
+      .populate('comments.author')
       .exec();
 
     if (!article) {
@@ -88,5 +92,33 @@ export class ArticlesService {
     if (!result.acknowledged) {
       throw new Error('failed to delete article');
     }
+  }
+
+  async getComments(articleId: string): Promise<Comment[]> {
+    const article = await this.articleModel
+      .findOne({ articleId: articleId })
+      .select('comments')
+      .exec();
+
+    return article.comments;
+  }
+
+  async createComment(
+    articleId: string,
+    dto: CreateCommentDto,
+  ): Promise<Comment> {
+    return;
+  }
+
+  async updateComment(
+    articleId: string,
+    commentId: string,
+    dto: UpdateCommentDto,
+  ): Promise<Comment> {
+    return;
+  }
+
+  async deleteComment(articleId: string, commentId: string): Promise<void> {
+    return;
   }
 }

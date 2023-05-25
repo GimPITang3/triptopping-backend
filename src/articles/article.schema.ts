@@ -4,8 +4,11 @@ import { User } from 'src/users/user.schema';
 
 export type ArticleDocument = HydratedDocument<Article>;
 
-@Schema({ _id: false, timestamps: true })
-class Comment {
+@Schema({ _id: true, timestamps: true })
+export class Comment {
+  @Prop({ unique: true })
+  commentId: string;
+
   @Prop()
   content: string;
 
@@ -14,6 +17,12 @@ class Comment {
 
   @Prop()
   createdAt: Date;
+
+  @Prop()
+  updatedAt: Date;
+
+  @Prop()
+  deletedAt?: Date;
 }
 
 const CommentSchema = SchemaFactory.createForClass(Comment);

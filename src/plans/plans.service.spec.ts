@@ -31,11 +31,12 @@ describe.skip('PlansService', () => {
       providers: [
         {
           provide: getModelToken(Plan.name),
-          useValue: {
+          useValue: <Partial<Model<Plan>>>{
             new: jest.fn().mockResolvedValue(mockPlan({})),
             constructor: jest.fn().mockResolvedValue(mockPlan({})),
             find: jest.fn(),
             findOne: jest.fn(),
+            findOneAndUpdate: jest.fn(),
             update: jest.fn(),
             create: jest.fn(),
             remove: jest.fn(),
