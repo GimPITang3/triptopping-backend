@@ -56,8 +56,8 @@ export class ScheduleRecommendService {
   ) {}
 
   splitByDistance(
-    array: Partial<PlaceData>[],
-    center: Partial<PlaceData>,
+    array: Partial<TranslatePlaceData>[],
+    center: Partial<TranslatePlaceData>,
     parts: number,
     itineray: ItineraryDaily[],
   ): RecommendPlace[][] {
@@ -67,12 +67,12 @@ export class ScheduleRecommendService {
       result[idx] = day
         .filter((slot) => slot.type === 'place' && slot.manual)
         .map((slot) => ({
-          place: slot.manual.details as Partial<PlaceData>,
+          place: slot.manual.details as Partial<TranslatePlaceData>,
           isManaul: true,
         }));
     });
 
-    interface PlaceWithDistance extends Partial<PlaceData> {
+    interface PlaceWithDistance extends Partial<TranslatePlaceData> {
       distance: number;
     }
     const sortedPlaces: PlaceWithDistance[] = array.map((place) => {
@@ -163,13 +163,23 @@ export class ScheduleRecommendService {
           minIdx = idx;
         }
       });
-      result[day].push({
-        place: candidates.splice(minIdx, 1)[0],
-        isManaul: false,
-      });
-      day++;
-      if (day >= parts) {
-        day -= parts;
+      const candidate = candidates.splice(minIdx, 1)[0];
+      const isNearBy = result[day].some(
+        (place) =>
+          haversineDistance(
+            place.place.geometry.location,
+            candidate.geometry.location,
+          ) < 100,
+      );
+      if (!isNearBy) {
+        result[day].push({
+          place: candidate,
+          isManaul: false,
+        });
+        day++;
+        if (day >= parts) {
+          day -= parts;
+        }
       }
     }
 
