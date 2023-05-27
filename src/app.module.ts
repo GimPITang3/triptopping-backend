@@ -8,7 +8,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ArticlesModule } from './articles/articles.module';
 import { AuthModule } from './auth/auth.module';
 import { PlansModule } from './plans/plans.module';
-import { ScheduleRecommendModule } from './schedule-recommend/schedule-recommend.module';
 import { UsersModule } from './users/users.module';
 
 import { LoggerMiddleware } from './middlewares/logger.middleware';
@@ -29,7 +28,7 @@ import { LoggerMiddleware } from './middlewares/logger.middleware';
     UsersModule,
     PlansModule,
     ArticlesModule,
-    ScheduleRecommendModule,
+    // ScheduleRecommendModule,
   ],
   controllers: [AppController],
   providers: [AppService],
