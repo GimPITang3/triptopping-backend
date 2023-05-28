@@ -26,7 +26,7 @@ export class User {
   @Prop({ unique: true })
   email: string;
 
-  @Prop()
+  @Prop({ default: '' })
   introduce: string;
 
   @Prop({ type: GoogleProviderSchema })

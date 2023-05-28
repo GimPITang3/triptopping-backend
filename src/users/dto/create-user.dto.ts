@@ -17,7 +17,8 @@ export class CreateUserDto {
   nickname: string;
 
   @IsString()
-  introduce: string;
+  @IsOptional()
+  introduce?: string;
 
   @ValidateNested()
   google?: GoogleProvider;

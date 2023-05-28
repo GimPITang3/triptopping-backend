@@ -84,13 +84,12 @@ export class AuthController {
       token.access_token,
     );
 
-    // TODO: It is up to you, sang min.
     const { email, profileUrl } = await this.googleAuthService.getProfile();
 
     try {
       const { accessToken, user } = await this.authService.registerWithGoogle(
         tokenInfo.sub,
-        { ...dto, profileUrl },
+        { ...dto, profileUrl, email },
       );
 
       return {

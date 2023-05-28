@@ -46,7 +46,10 @@ export class AuthService {
     return { accessToken, user };
   }
 
-  async registerWithGoogle(id: string, dto: GoogleSignupDto) {
+  async registerWithGoogle(
+    id: string,
+    dto: GoogleSignupDto & { profileUrl?: string; email: string },
+  ) {
     const exists = await this.usersService.existsByGoogleId(id);
 
     if (exists) {
@@ -60,7 +63,6 @@ export class AuthService {
       },
       email: dto.email,
       nickname: dto.nickname,
-      introduce: dto.introduce,
     });
 
     return await this.loginWithGoogle(id);
