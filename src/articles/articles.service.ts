@@ -36,6 +36,7 @@ export class ArticlesService {
     const query = this.articleModel
       .find({})
       .populate('author')
+      .populate('comments.author')
       .sort({ createdAt: 'desc' });
 
     const total = await query.clone().count().exec();
