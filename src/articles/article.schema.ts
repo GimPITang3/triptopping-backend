@@ -53,6 +53,9 @@ export class Article {
   @Prop([CommentSchema])
   comments: CommentDocument[];
 
+  @Prop({ default: 0 })
+  likes: number;
+
   @Prop()
   createdAt: Date;
 
