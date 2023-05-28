@@ -15,7 +15,7 @@ export class OpenaiService {
   }
 
   public async getTagWeights(tags: string[]) {
-    const tagString = tags.join(' ');
+    const tagString = '#여행 #' + tags.join(' #');
     const system = `This task predicts the customer's travel theme preferences.
 For the input travel tag, specify a real number preference from 0 to 1 for each place category and return it only as JSON.
 
@@ -30,26 +30,40 @@ park
 tourist_attraction
 zoo
 }`;
-    const completion = await this.openai.createChatCompletion({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content: system,
-        },
-        {
-          role: 'user',
-          content: tagString,
-        },
-      ],
-      temperature: 0,
-      max_tokens: 300,
-      top_p: 1,
-      frequency_penalty: 0,
-      presence_penalty: 0,
-    });
-    const AIRes = completion.data.choices[0].message.content;
-    const AIResJSON = JSON.parse(AIRes);
+    let AIResJSON: object;
+    try {
+      const completion = await this.openai.createChatCompletion({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: system,
+          },
+          {
+            role: 'user',
+            content: tagString,
+          },
+        ],
+        temperature: 0,
+        max_tokens: 300,
+        top_p: 1,
+        frequency_penalty: 0,
+        presence_penalty: 0,
+      });
+      const AIRes = completion.data.choices[0].message.content;
+      AIResJSON = JSON.parse(AIRes);
+    } catch (e) {
+      AIResJSON = {
+        amusement_park: 0.1,
+        aquarium: 0.1,
+        art_gallery: 0.1,
+        casino: 0.1,
+        museum: 0.1,
+        park: 0.1,
+        tourist_attraction: 0.1,
+        zoo: 0.1,
+      };
+    }
     return AIResJSON as WeightedTag;
   }
 }
