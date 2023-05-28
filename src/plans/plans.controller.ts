@@ -4,11 +4,14 @@ import {
   Delete,
   Get,
   HttpCode,
+  HttpException,
+  HttpStatus,
   Param,
   Patch,
   Post,
   Put,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 
@@ -19,6 +22,10 @@ import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
 import { ExcludePlacesDto } from './dto/exclude-places.dto';
 import { PaginationOptionsDto } from 'src/pagination/pagination-options.dto';
+
+import { UserNotFoundError } from 'src/errors/user-not-found.error';
+import { Request } from 'express';
+import { User } from 'src/users/user.schema';
 
 @Controller()
 export class PlansController {
@@ -35,9 +42,17 @@ export class PlansController {
     @Query() dto: PaginationOptionsDto,
     @Param('uid') userId: string,
   ) {
-    const result = await this.plansService.paginate(userId, dto);
+    try {
+      const result = await this.plansService.paginate(userId, dto);
 
-    return result;
+      return result;
+    } catch (e) {
+      if (e instanceof UserNotFoundError) {
+        throw new HttpException(e.message, HttpStatus.NOT_FOUND);
+      } else {
+        throw e;
+      }
+    }
   }
 
   @Get('plans/:id')
@@ -49,8 +64,11 @@ export class PlansController {
 
   @UseGuards(JwtGuard)
   @Post('plans')
-  async create(@Body() createPlanDto: CreatePlanDto) {
-    const plan = await this.plansService.create(createPlanDto);
+  async create(
+    @Body() createPlanDto: CreatePlanDto,
+    @Req() request: Request & { user: User },
+  ) {
+    const plan = await this.plansService.create(request.user, createPlanDto);
 
     return plan.toObject();
   }

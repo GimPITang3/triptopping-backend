@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 
 import { createId } from '@paralleldrive/cuid2';
 
@@ -8,6 +8,8 @@ import { ScheduleRecommendService } from 'src/schedule-recommend/schedule-recomm
 
 import { Plan, PlanDocument } from './plan.schema';
 import { User, UserDocument } from 'src/users/user.schema';
+
+import { UserNotFoundError } from 'src/errors/user-not-found.error';
 
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
@@ -35,7 +37,7 @@ export class PlansService {
     const user = await this.usersModel.findOne({ userId }).exec();
 
     if (!user) {
-      throw new Error('user not found');
+      throw new UserNotFoundError();
     }
 
     const query = this.plansModel.find({
@@ -80,12 +82,15 @@ export class PlansService {
     return plan;
   }
 
-  async create(createPlanDto: CreatePlanDto): Promise<PlanDocument> {
+  async create(
+    user: User,
+    createPlanDto: CreatePlanDto,
+  ): Promise<PlanDocument> {
     const plan = new this.plansModel({
       ...createPlanDto,
       planId: createId(),
       itinerary: [],
-      author: new Types.ObjectId(createPlanDto.author),
+      author: user,
       members: [],
     });
 

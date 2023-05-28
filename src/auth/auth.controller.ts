@@ -18,7 +18,7 @@ import { AuthService, UserAlreadyExistError } from './auth.service';
 import { GoogleAuthService } from './google/google-auth.service';
 import { GoogleSigninDto } from './dto/google-signin.dto';
 import { GoogleSignupDto } from './dto/google-signup.dto';
-import { UserNotFoundError } from 'src/users/users.service';
+import { UserNotFoundError } from 'src/errors/user-not-found.error';
 
 @Controller('auth')
 export class AuthController {
