@@ -116,10 +116,12 @@ export class ArticlesService {
   }
 
   async delete(id: string) {
-    const result = await this.articleModel.deleteOne({
-      articleId: id,
-      deletedAt: undefined,
-    });
+    const result = await this.articleModel
+      .deleteOne({
+        articleId: id,
+        deletedAt: undefined,
+      })
+      .exec();
 
     if (!result.acknowledged) {
       throw new Error('failed to delete article');
