@@ -39,7 +39,11 @@ export class ArticlesService {
       .sort({ createdAt: 'desc' });
 
     const total = await query.clone().count().exec();
-    const articles = await query.clone().skip(dto.skip).limit(dto.limit).exec();
+    const articles = await query
+      .clone()
+      .skip(parseInt(dto.skip.toString()))
+      .limit(parseInt(dto.limit.toString()))
+      .exec();
 
     return {
       items: articles.map((article) => article.toObject()),
