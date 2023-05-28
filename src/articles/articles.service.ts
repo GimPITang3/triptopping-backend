@@ -70,10 +70,6 @@ export class ArticlesService {
       .findOne({ planId: dto.planId, deletedAt: undefined })
       .exec();
 
-    if (!plan) {
-      throw new Error('Plan not found');
-    }
-
     const article = new this.articleModel({
       title: dto.title,
       content: dto.content,
@@ -91,10 +87,6 @@ export class ArticlesService {
     const plan = await this.planModel
       .findOne({ planId: dto.planId, deletedAt: undefined })
       .exec();
-
-    if (!plan) {
-      throw new Error('Plan not found');
-    }
 
     const article = await this.articleModel
       .findOneAndUpdate(
