@@ -4,6 +4,7 @@ import { DirectionsRoute } from '@googlemaps/google-maps-services-js';
 
 import { Itinerary } from './interfaces/itinerary.interface';
 import { LatLng } from 'src/interfaces/lat-lng.interface';
+import { WeightedTag } from 'src/openai/openai.service';
 
 export type PlanDocument = HydratedDocument<Plan>;
 
@@ -48,6 +49,9 @@ export class Plan {
 
   @Prop()
   tags: string[];
+
+  @Prop()
+  tagWeight?: WeightedTag;
 
   @Prop()
   itinerary: Itinerary;

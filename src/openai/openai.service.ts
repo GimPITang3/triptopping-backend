@@ -1,6 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { Configuration, OpenAIApi } from 'openai';
 
+export interface WeightedTag {
+  amusement_park: number;
+  aquarium: number;
+  art_gallery: number;
+  casino: number;
+  museum: number;
+  park: number;
+  tourist_attraction: number;
+  zoo: number;
+}
+
 @Injectable()
 export class OpenaiService {
   private configuration: Configuration;
@@ -23,15 +34,11 @@ category:
 amusement_park
 aquarium
 art_gallery
-bakery
-cafe
 casino
-department_store
 museum
 park
-restaurant
-shopping_mall
-spa
+tourist_attraction
+zoo
 }`;
     const completion = await this.openai.createChatCompletion({
       model: 'gpt-3.5-turbo',
@@ -53,6 +60,6 @@ spa
     });
     const AIRes = completion.data.choices[0].message.content;
     const AIResJSON = JSON.parse(AIRes);
-    return AIResJSON;
+    return AIResJSON as WeightedTag;
   }
 }

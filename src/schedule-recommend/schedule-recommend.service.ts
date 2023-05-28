@@ -24,9 +24,9 @@ import * as haversineDistance from 'haversine-distance';
 import { Duration } from 'luxon';
 
 import { LatLng } from 'src/interfaces/lat-lng.interface';
-import { isEmptyObject } from 'src/utils/is-empty-object.util';
 import { v2 } from '@google-cloud/translate';
 import { TranslatePlaceData } from './interfaces/translated-place-data.interface';
+import { OpenaiService, WeightedTag } from 'src/openai/openai.service';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -53,6 +53,7 @@ export class ScheduleRecommendService {
     @Inject(GOOGLE_MAPS_ACCESS_KEY_TOKEN)
     private readonly key: string,
     private readonly translate: v2.Translate,
+    private readonly openai: OpenaiService,
   ) {}
 
   splitByDistance(
@@ -60,6 +61,7 @@ export class ScheduleRecommendService {
     center: Partial<TranslatePlaceData>,
     parts: number,
     itineray: ItineraryDaily[],
+    weightedTag: WeightedTag,
   ): RecommendPlace[][] {
     // sorting...
     const result: RecommendPlace[][] = [];
@@ -147,17 +149,34 @@ export class ScheduleRecommendService {
           .includes(place.place_id),
     );
 
+    const sum = Object.values(weightedTag).reduce(
+      (acc, value) => acc + value,
+      0,
+    );
+    Object.keys(weightedTag).forEach((key) => {
+      weightedTag[key] /= sum;
+    });
+
     let day = 0;
     while (candidates.length > 0) {
       let hMinDist = Number.MAX_SAFE_INTEGER;
       let minIdx = -1;
       candidates.forEach((place, idx) => {
+        const weight = place.types.reduce(
+          (acc, cur) => acc + weightedTag[cur] || 0,
+          0,
+        );
         const hDist =
-          haversineDistance(place.geometry.location, center.geometry.location) +
-          haversineDistance(
+          (haversineDistance(
             place.geometry.location,
-            result[day][0].place.geometry.location,
-          );
+            center.geometry.location,
+          ) +
+            haversineDistance(
+              place.geometry.location,
+              result[day][0].place.geometry.location,
+            )) *
+          (1 - weight);
+
         if (hDist < hMinDist) {
           hMinDist = hDist;
           minIdx = idx;
@@ -197,8 +216,15 @@ export class ScheduleRecommendService {
     center: Partial<PlaceData>,
     parts: number,
     itinerary: ItineraryDaily[],
+    weightedTag: WeightedTag,
   ): RecommendPlace[][] {
-    const result = this.splitByDistance(array, center, parts, itinerary);
+    const result = this.splitByDistance(
+      array,
+      center,
+      parts,
+      itinerary,
+      weightedTag,
+    );
 
     return result;
   }
@@ -553,12 +579,27 @@ export class ScheduleRecommendService {
           .map(() => []),
       );
     }
-
+    let weightedTagPromise: Promise<WeightedTag>;
+    if (!plan.tagWeight) {
+      weightedTagPromise = this.openai.getTagWeights(plan.tags);
+    } else {
+      weightedTagPromise = Promise.resolve(plan.tagWeight);
+    }
+    const isKorea =
+      plan.loc.lat > 33 &&
+      plan.loc.lat < 43 &&
+      plan.loc.lng > 124 &&
+      plan.loc.lng < 132;
     // Retrive Landmarks and lodgings
-    const landmarks = await this.retreiveLandmarks(plan.loc);
-    const lodgings = await this.retreiveLodging(plan.loc);
-    const airports = await this.retreiveAirport(plan.loc);
+    const landmarksPromise = this.retreiveLandmarks(plan.loc);
+    const lodgingsPromise = this.retreiveLodging(plan.loc);
+    const airportsPromise = this.retreiveAirport(plan.loc);
 
+    const [landmarks, lodgings, airports] = await Promise.all([
+      landmarksPromise,
+      lodgingsPromise,
+      airportsPromise,
+    ]);
     // Pickup best lodging
     lodgings.sort((a, b) => b.user_ratings_total - a.user_ratings_total);
     const lodging = lodgings[0];
@@ -568,26 +609,31 @@ export class ScheduleRecommendService {
     const excludedLandmarks = landmarks.filter(
       (landmark) => !plan.excludes.includes(landmark.place_id),
     );
+    const weightedTag = await weightedTagPromise;
+    plan.tagWeight = weightedTag;
     // Distribute landmarks
     const landmarksPerDay = this.splitToChunks(
       excludedLandmarks,
       lodging,
       plan.period,
       plan.itinerary,
+      weightedTag,
     );
-
     // Plan daily itinerary
     plan.itinerary.forEach((daily, dayIndex) => {
       const from: ScheduleSlot = {
         type: 'place',
         system: {
-          details: dayIndex === 0 ? airport : lodging,
+          details: !isKorea && dayIndex === 0 ? airport : lodging,
         },
       };
       const to: ScheduleSlot = {
         type: 'place',
         system: {
-          details: dayIndex === plan.itinerary.length - 1 ? airport : lodging,
+          details:
+            !isKorea && dayIndex === plan.itinerary.length - 1
+              ? airport
+              : lodging,
         },
       };
 
