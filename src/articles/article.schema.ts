@@ -1,11 +1,16 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
+import { HydratedDocument, Schema as MongooseSchema, Types } from 'mongoose';
+
 import { Plan } from 'src/plans/plan.schema';
 import { User } from 'src/users/user.schema';
 
-export type ArticleDocument = HydratedDocument<Article>;
+export type CommentDocument = HydratedDocument<Comment>;
+export type ArticleDocument = HydratedDocument<
+  Article,
+  { comments: Types.DocumentArray<Comment> }
+>;
 
-@Schema({ _id: true, timestamps: true })
+@Schema({ timestamps: true })
 export class Comment {
   @Prop({ unique: true })
   commentId: string;
@@ -45,8 +50,8 @@ export class Article {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: Plan.name })
   plan?: Plan;
 
-  @Prop([{ type: CommentSchema }])
-  comments: Comment[];
+  @Prop([CommentSchema])
+  comments: CommentDocument[];
 
   @Prop()
   createdAt: Date;

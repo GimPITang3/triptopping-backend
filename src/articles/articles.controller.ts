@@ -71,28 +71,39 @@ export class ArticlesController {
     return comments;
   }
 
+  @UseGuards(JwtGuard)
   @Post(':id/comments')
-  async createComment(@Param('id') id: string, @Body() dto: CreateCommentDto) {
-    const comment = await this.articlesService.createComment(id, dto);
+  async createComment(
+    @Param('id') id: string,
+    @Body() dto: CreateCommentDto,
+    @Req() request: Request & { user: User },
+  ) {
+    const article = await this.articlesService.createComment(
+      request.user,
+      id,
+      dto,
+    );
 
-    return comment;
+    return article.toObject();
   }
 
+  @UseGuards(JwtGuard)
   @Post(':id/comments/:cid')
   async updateComment(
     @Param('id') id: string,
     @Param('cid') cid: string,
     @Body() dto: UpdateCommentDto,
   ) {
-    const comment = await this.articlesService.updateComment(id, cid, dto);
+    const article = await this.articlesService.updateComment(id, cid, dto);
 
-    return comment;
+    return article.toObject();
   }
 
+  @UseGuards(JwtGuard)
   @Post(':id/comments/:cid')
   async deleteComment(@Param('id') id: string, @Param('cid') cid: string) {
-    await this.articlesService.deleteComment(id, cid);
+    const article = await this.articlesService.deleteComment(id, cid);
 
-    return;
+    return article.toObject();
   }
 }

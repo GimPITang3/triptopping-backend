@@ -33,7 +33,10 @@ export class ArticlesService {
   async paginate(
     dto: PaginationOptionsDto,
   ): Promise<PaginationResponseDto<Article>> {
-    const query = this.articleModel.find({}).sort({ createdAt: 'desc' });
+    const query = this.articleModel
+      .find({})
+      .populate('author')
+      .sort({ createdAt: 'desc' });
 
     const total = await query.clone().count().exec();
     const articles = await query.clone().skip(dto.skip).limit(dto.limit).exec();
@@ -130,21 +133,73 @@ export class ArticlesService {
   }
 
   async createComment(
+    user: User,
     articleId: string,
     dto: CreateCommentDto,
-  ): Promise<Comment> {
-    return;
+  ): Promise<ArticleDocument> {
+    const article = await this.articleModel
+      .findOne({ articleId, deletedAt: undefined })
+      .exec();
+
+    if (!article) {
+      throw new ArticleNotFoundError();
+    }
+
+    article.comments.push({
+      commentId: createId(),
+      author: user,
+      content: dto.content,
+    });
+
+    await article.save();
+
+    return article;
   }
 
   async updateComment(
     articleId: string,
     commentId: string,
     dto: UpdateCommentDto,
-  ): Promise<Comment> {
-    return;
+  ): Promise<ArticleDocument> {
+    const article = await this.articleModel
+      .findOne({ articleId, deletedAt: undefined })
+      .exec();
+
+    if (!article) {
+      throw new ArticleNotFoundError();
+    }
+
+    const commentDocId = article.comments.find(
+      (comment) => comment.commentId === commentId,
+    )._id;
+
+    article.comments.id(commentDocId).updateOne({ content: dto.content });
+
+    await article.save();
+
+    return article;
   }
 
-  async deleteComment(articleId: string, commentId: string): Promise<void> {
-    return;
+  async deleteComment(
+    articleId: string,
+    commentId: string,
+  ): Promise<ArticleDocument> {
+    const article = await this.articleModel
+      .findOne({ articleId, deletedAt: undefined })
+      .exec();
+
+    if (!article) {
+      throw new ArticleNotFoundError();
+    }
+
+    const commentDocId = article.comments.find(
+      (comment) => comment.commentId === commentId,
+    )._id;
+
+    article.comments.id(commentDocId).deleteOne();
+
+    await article.save();
+
+    return article;
   }
 }
