@@ -89,6 +89,7 @@ export class ArticlesService {
   async update(id: string, dto: UpdateArticleDto): Promise<ArticleDocument> {
     const plan = await this.planModel
       .findOne({ planId: dto.planId, deletedAt: undefined })
+      .populate('comments.author')
       .exec();
 
     if (!plan) {
@@ -139,6 +140,7 @@ export class ArticlesService {
   ): Promise<ArticleDocument> {
     const article = await this.articleModel
       .findOne({ articleId, deletedAt: undefined })
+      .populate('comments.author')
       .exec();
 
     if (!article) {
@@ -163,6 +165,7 @@ export class ArticlesService {
   ): Promise<ArticleDocument> {
     const article = await this.articleModel
       .findOne({ articleId, deletedAt: undefined })
+      .populate('comments.author')
       .exec();
 
     if (!article) {
@@ -186,6 +189,7 @@ export class ArticlesService {
   ): Promise<ArticleDocument> {
     const article = await this.articleModel
       .findOne({ articleId, deletedAt: undefined })
+      .populate('comments.author')
       .exec();
 
     if (!article) {
@@ -206,6 +210,7 @@ export class ArticlesService {
   async incLikes(articleId: string): Promise<ArticleDocument> {
     const article = await this.articleModel
       .findOne({ articleId, deletedAt: undefined })
+      .populate('comments.author')
       .exec();
 
     if (!article) {
