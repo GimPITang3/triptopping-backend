@@ -88,7 +88,7 @@ export class ArticlesController {
   }
 
   @UseGuards(JwtGuard)
-  @Post(':id/comments/:cid')
+  @Patch(':id/comments/:cid')
   async updateComment(
     @Param('id') id: string,
     @Param('cid') cid: string,
@@ -100,7 +100,7 @@ export class ArticlesController {
   }
 
   @UseGuards(JwtGuard)
-  @Post(':id/comments/:cid')
+  @Delete(':id/comments/:cid')
   async deleteComment(@Param('id') id: string, @Param('cid') cid: string) {
     const article = await this.articlesService.deleteComment(id, cid);
 

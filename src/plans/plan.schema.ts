@@ -4,6 +4,7 @@ import { DirectionsRoute } from '@googlemaps/google-maps-services-js';
 
 import { Itinerary } from './interfaces/itinerary.interface';
 import { LatLng } from 'src/interfaces/lat-lng.interface';
+import { User } from 'src/users/user.schema';
 
 export type PlanDocument = HydratedDocument<Plan>;
 export type WeightedTagDocument = HydratedDocument<WeightedTag>;
@@ -48,13 +49,13 @@ export class Plan {
   @Prop({ required: true })
   name: string;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: User.name, required: true })
   author: Types.ObjectId;
 
   @Prop()
   numberOfMembers: number;
 
-  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }] })
+  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: User.name }] })
   members: Types.ObjectId[];
 
   @Prop()
