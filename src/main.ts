@@ -15,7 +15,12 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
 
   // Pipes
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    }),
+  );
 
   // Interceptors
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
