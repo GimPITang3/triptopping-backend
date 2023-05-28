@@ -156,6 +156,9 @@ export class ScheduleRecommendService {
     );
     Object.keys(weightedTag).forEach((key) => {
       weightedTag[key] /= sum;
+      if (weightedTag[key] === Infinity) {
+        weightedTag[key] = 0;
+      }
     });
 
     let day = 0;
