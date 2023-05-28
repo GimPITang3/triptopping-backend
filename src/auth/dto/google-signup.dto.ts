@@ -1,4 +1,4 @@
-import { IsEmail, IsString } from 'class-validator';
+import { IsEmail, IsOptional, IsString } from 'class-validator';
 
 export class GoogleSignupDto {
   @IsString()
@@ -12,4 +12,8 @@ export class GoogleSignupDto {
 
   @IsString()
   introduce: string;
+
+  @IsString()
+  @IsOptional()
+  profileUrl?: string;
 }

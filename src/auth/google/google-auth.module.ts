@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Scope } from '@nestjs/common';
 import { GoogleAuthService } from './google-auth.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
@@ -21,6 +21,7 @@ import { OAuth2Client } from 'google-auth-library';
         return client;
       },
       inject: [ConfigService],
+      scope: Scope.REQUEST,
     },
   ],
   exports: [GoogleAuthService],

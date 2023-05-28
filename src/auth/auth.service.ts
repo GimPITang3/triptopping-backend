@@ -54,7 +54,10 @@ export class AuthService {
     }
 
     await this.usersService.create({
-      google: { id: id },
+      google: {
+        id: id,
+        profileUrl: dto.profileUrl,
+      },
       email: dto.email,
       nickname: dto.nickname,
       introduce: dto.introduce,

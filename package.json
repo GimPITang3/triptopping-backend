@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@google-cloud/translate": "^7.2.1",
+    "@googleapis/people": "^3.0.2",
     "@googlemaps/google-maps-services-js": "^3.3.29",
     "@nestjs/common": "^9.4.0",
     "@nestjs/config": "^2.3.1",

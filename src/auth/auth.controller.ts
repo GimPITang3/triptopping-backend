@@ -51,7 +51,10 @@ export class AuthController {
 
   @Post('google/signin')
   async googleSignin(@Body() dto: GoogleSigninDto) {
-    const tokenInfo = await this.googleAuthService.getTokenInfo(dto.code);
+    const token = await this.googleAuthService.getToken(dto.code);
+    const tokenInfo = await this.googleAuthService.getTokenInfo(
+      token.access_token,
+    );
 
     try {
       const { accessToken, user } = await this.authService.loginWithGoogle(
@@ -76,12 +79,18 @@ export class AuthController {
 
   @Post('google/signup')
   async googleSignup(@Body() dto: GoogleSignupDto) {
-    const tokenInfo = await this.googleAuthService.getTokenInfo(dto.code);
+    const token = await this.googleAuthService.getToken(dto.code);
+    const tokenInfo = await this.googleAuthService.getTokenInfo(
+      token.access_token,
+    );
+
+    // TODO: It is up to you, sang min.
+    const { email, profileUrl } = await this.googleAuthService.getProfile();
 
     try {
       const { accessToken, user } = await this.authService.registerWithGoogle(
         tokenInfo.sub,
-        dto,
+        { ...dto, profileUrl },
       );
 
       return {

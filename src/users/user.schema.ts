@@ -7,6 +7,9 @@ export type UserDocument = HydratedDocument<User>;
 class GoogleProvider {
   @Prop({ required: true, unique: true })
   id: string;
+
+  @Prop()
+  profileUrl?: string;
 }
 
 const GoogleProviderSchema = SchemaFactory.createForClass(GoogleProvider);

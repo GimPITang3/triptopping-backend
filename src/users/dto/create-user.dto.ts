@@ -1,8 +1,12 @@
-import { IsEmail, IsString, ValidateNested } from 'class-validator';
+import { IsEmail, IsOptional, IsString, ValidateNested } from 'class-validator';
 
 class GoogleProvider {
   @IsString()
   id: string;
+
+  @IsString()
+  @IsOptional()
+  profileUrl?: string;
 }
 
 export class CreateUserDto {
