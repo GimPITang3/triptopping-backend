@@ -4,7 +4,6 @@ import { DirectionsRoute } from '@googlemaps/google-maps-services-js';
 
 import { Itinerary } from './interfaces/itinerary.interface';
 import { LatLng } from 'src/interfaces/lat-lng.interface';
-import { WeightedTag } from 'src/openai/openai.service';
 
 export type PlanDocument = HydratedDocument<Plan>;
 
@@ -16,6 +15,28 @@ class LatLngClass implements LatLng {
   @Prop()
   lng: number;
 }
+
+@Schema()
+export class WeightedTag {
+  @Prop()
+  amusement_park: number;
+  @Prop()
+  aquarium: number;
+  @Prop()
+  art_gallery: number;
+  @Prop()
+  casino: number;
+  @Prop()
+  museum: number;
+  @Prop()
+  park: number;
+  @Prop()
+  tourist_attraction: number;
+  @Prop()
+  zoo: number;
+}
+
+const WeightedTagSchema = SchemaFactory.createForClass(WeightedTag);
 
 @Schema({ timestamps: true })
 export class Plan {
@@ -50,7 +71,7 @@ export class Plan {
   @Prop()
   tags: string[];
 
-  @Prop()
+  @Prop({ type: WeightedTagSchema })
   tagWeight?: WeightedTag;
 
   @Prop()

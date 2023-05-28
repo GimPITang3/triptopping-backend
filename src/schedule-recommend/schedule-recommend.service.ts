@@ -9,7 +9,7 @@ import {
   PlaceInputType,
   Status,
 } from '@googlemaps/google-maps-services-js';
-import { Plan } from 'src/plans/plan.schema';
+import { Plan, WeightedTag } from 'src/plans/plan.schema';
 import { GOOGLE_MAPS_ACCESS_KEY_TOKEN } from 'src/google-maps/google-maps.constants';
 
 import {
@@ -26,7 +26,7 @@ import { Duration } from 'luxon';
 import { LatLng } from 'src/interfaces/lat-lng.interface';
 import { v2 } from '@google-cloud/translate';
 import { TranslatePlaceData } from './interfaces/translated-place-data.interface';
-import { OpenaiService, WeightedTag } from 'src/openai/openai.service';
+import { OpenaiService } from 'src/openai/openai.service';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));

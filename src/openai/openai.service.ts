@@ -1,16 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Configuration, OpenAIApi } from 'openai';
-
-export interface WeightedTag {
-  amusement_park: number;
-  aquarium: number;
-  art_gallery: number;
-  casino: number;
-  museum: number;
-  park: number;
-  tourist_attraction: number;
-  zoo: number;
-}
+import { WeightedTag } from 'src/plans/plan.schema';
 
 @Injectable()
 export class OpenaiService {
