@@ -202,4 +202,20 @@ export class ArticlesService {
 
     return article;
   }
+
+  async incLikes(articleId: string): Promise<ArticleDocument> {
+    const article = await this.articleModel
+      .findOne({ articleId, deletedAt: undefined })
+      .exec();
+
+    if (!article) {
+      throw new ArticleNotFoundError();
+    }
+
+    article.likes++;
+
+    await article.save();
+
+    return article;
+  }
 }

@@ -106,4 +106,12 @@ export class ArticlesController {
 
     return article.toObject();
   }
+
+  @UseGuards(JwtGuard)
+  @Post(':id/likes')
+  async incLikes(@Param('id') id: string) {
+    const article = await this.articlesService.incLikes(id);
+
+    return article.toObject();
+  }
 }
