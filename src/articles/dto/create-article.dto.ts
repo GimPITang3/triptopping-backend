@@ -6,4 +6,7 @@ export class CreateArticleDto {
 
   @IsString()
   content: string;
+
+  @IsString()
+  planId: string;
 }

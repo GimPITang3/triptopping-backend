@@ -3,11 +3,16 @@ import { MongooseModule } from '@nestjs/mongoose';
 
 import { ArticlesService } from './articles.service';
 import { ArticlesController } from './articles.controller';
+
 import { Article, ArticleSchema } from './article.schema';
+import { Plan, PlanSchema } from 'src/plans/plan.schema';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Article.name, schema: ArticleSchema }]),
+    MongooseModule.forFeature([
+      { name: Article.name, schema: ArticleSchema },
+      { name: Plan.name, schema: PlanSchema },
+    ]),
   ],
   providers: [ArticlesService],
   controllers: [ArticlesController],

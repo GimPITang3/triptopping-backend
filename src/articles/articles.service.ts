@@ -6,6 +6,7 @@ import { createId } from '@paralleldrive/cuid2';
 
 import { Article, ArticleDocument, Comment } from './article.schema';
 import { User } from 'src/users/user.schema';
+import { Plan, PlanDocument } from 'src/plans/plan.schema';
 
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
@@ -25,6 +26,8 @@ export class ArticlesService {
   constructor(
     @InjectModel(Article.name)
     private readonly articleModel: Model<ArticleDocument>,
+    @InjectModel(Plan.name)
+    private readonly planModel: Model<PlanDocument>,
   ) {}
 
   async paginate(
@@ -47,6 +50,7 @@ export class ArticlesService {
     const article = await this.articleModel
       .findOne({ articleId: id, deletedAt: undefined })
       .populate('author')
+      .populate('plan')
       .populate('comments.author')
       .exec();
 
@@ -58,10 +62,20 @@ export class ArticlesService {
   }
 
   async create(user: User, dto: CreateArticleDto): Promise<ArticleDocument> {
+    const plan = await this.planModel
+      .findOne({ planId: dto.planId, deletedAt: undefined })
+      .exec();
+
+    if (!plan) {
+      throw new Error('Plan not found');
+    }
+
     const article = new this.articleModel({
-      ...dto,
+      title: dto.title,
+      content: dto.content,
       articleId: createId(),
       author: user,
+      plan: plan,
     });
 
     await article.save();
@@ -70,9 +84,21 @@ export class ArticlesService {
   }
 
   async update(id: string, dto: UpdateArticleDto): Promise<ArticleDocument> {
+    const plan = await this.planModel
+      .findOne({ planId: dto.planId, deletedAt: undefined })
+      .exec();
+
+    if (!plan) {
+      throw new Error('Plan not found');
+    }
+
     const article = await this.articleModel.findOneAndUpdate(
       { articleId: id, deletedAt: undefined },
-      { ...dto },
+      {
+        ...{ title: dto.title },
+        ...{ content: dto.content },
+        ...{ plan: plan },
+      },
       { returnOriginal: false },
     );
 
