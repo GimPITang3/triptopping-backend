@@ -89,22 +89,24 @@ export class ArticlesService {
   async update(id: string, dto: UpdateArticleDto): Promise<ArticleDocument> {
     const plan = await this.planModel
       .findOne({ planId: dto.planId, deletedAt: undefined })
-      .populate('comments.author')
       .exec();
 
     if (!plan) {
       throw new Error('Plan not found');
     }
 
-    const article = await this.articleModel.findOneAndUpdate(
-      { articleId: id, deletedAt: undefined },
-      {
-        ...{ title: dto.title },
-        ...{ content: dto.content },
-        ...{ plan: plan },
-      },
-      { returnOriginal: false },
-    );
+    const article = await this.articleModel
+      .findOneAndUpdate(
+        { articleId: id, deletedAt: undefined },
+        {
+          ...{ title: dto.title },
+          ...{ content: dto.content },
+          ...{ plan: plan },
+        },
+        { returnOriginal: false },
+      )
+      .populate('comments.author')
+      .exec();
 
     if (!article) {
       throw new ArticleNotFoundError();
