@@ -80,8 +80,7 @@ export class PlansService {
     }
 
     await this.scheduleRecommend.recommend(plan);
-
-    await plan.save();
+    await this.plansModel.updateOne({ planId }, plan);
 
     return plan;
   }
