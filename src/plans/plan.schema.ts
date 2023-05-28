@@ -6,6 +6,7 @@ import { Itinerary } from './interfaces/itinerary.interface';
 import { LatLng } from 'src/interfaces/lat-lng.interface';
 
 export type PlanDocument = HydratedDocument<Plan>;
+export type WeightedTagDocument = HydratedDocument<WeightedTag>;
 
 @Schema()
 class LatLngClass implements LatLng {

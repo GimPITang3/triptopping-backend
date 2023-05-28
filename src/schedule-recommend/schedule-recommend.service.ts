@@ -9,7 +9,7 @@ import {
   PlaceInputType,
   Status,
 } from '@googlemaps/google-maps-services-js';
-import { Plan, WeightedTag } from 'src/plans/plan.schema';
+import { Plan, WeightedTag, WeightedTagDocument } from 'src/plans/plan.schema';
 import { GOOGLE_MAPS_ACCESS_KEY_TOKEN } from 'src/google-maps/google-maps.constants';
 
 import {
@@ -162,10 +162,9 @@ export class ScheduleRecommendService {
       let hMinDist = Number.MAX_SAFE_INTEGER;
       let minIdx = -1;
       candidates.forEach((place, idx) => {
-        const weight = place.types.reduce(
-          (acc, cur) => acc + weightedTag[cur] || 0,
-          0,
-        );
+        const weight = place.types.reduce((acc, cur) => {
+          return acc + (weightedTag[cur] || 0);
+        }, 0);
         const hDist =
           (haversineDistance(
             place.geometry.location,
@@ -583,7 +582,9 @@ export class ScheduleRecommendService {
     if (!plan.tagWeight) {
       weightedTagPromise = this.openai.getTagWeights(plan.tags);
     } else {
-      weightedTagPromise = Promise.resolve(plan.tagWeight);
+      const weightedTag = (plan.tagWeight as WeightedTagDocument).toObject();
+      delete weightedTag._id;
+      weightedTagPromise = Promise.resolve(weightedTag);
     }
     const isKorea =
       plan.loc.lat > 33 &&
