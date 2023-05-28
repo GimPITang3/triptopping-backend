@@ -228,7 +228,6 @@ export class ScheduleRecommendService {
           minIdx = idx;
         }
       });
-      console.log(minDist, restaurants[minIdx].name);
       return minIdx;
     };
     const promises = chunks.map(async (chunk) => {
@@ -242,18 +241,18 @@ export class ScheduleRecommendService {
         return;
       }
       const restaurants1 = await this.retreiveRestaurant(
-        chunk[1].place.geometry.location,
+        chunk[0].place.geometry.location,
       );
       const firstIndex = findMinDistRestaurantIndex(
-        chunk[1].place,
+        chunk[0].place,
         restaurants1,
       );
       const first = restaurants1.splice(firstIndex, 1)[0];
       const restaurants2 = await this.retreiveRestaurant(
-        chunk[3].place.geometry.location,
+        chunk[chunk.length - 1].place.geometry.location,
       );
       const secondIndex = findMinDistRestaurantIndex(
-        chunk[3].place,
+        chunk[chunk.length - 1].place,
         restaurants2,
       );
       const second = restaurants2.splice(secondIndex, 1)[0];
