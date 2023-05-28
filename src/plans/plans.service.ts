@@ -127,6 +127,31 @@ export class PlansService {
     return plan;
   }
 
+  async updateHotel(
+    planId: string,
+    updatePlanDto: UpdatePlanDto,
+  ): Promise<PlanDocument> {
+    const plan = await this.plansModel
+      .findOneAndUpdate(
+        { planId, deletedAt: undefined },
+        {
+          ...updatePlanDto,
+        },
+        {
+          returnOriginal: false,
+        },
+      )
+      .exec();
+
+    if (!plan) {
+      throw new PlanNotFoundError();
+    }
+
+    await this.scheduleRecommend.updateHotel(plan);
+    await this.plansModel.updateOne({ planId }, plan);
+    return plan;
+  }
+
   async delete(planId: string) {
     const plan = await this.plansModel
       .findOne({ planId, deletedAt: undefined })

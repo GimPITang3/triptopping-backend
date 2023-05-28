@@ -101,6 +101,16 @@ export class PlansController {
     return plan.toObject();
   }
 
+  @Patch('plans/:id/hotel')
+  async updateHotel(
+    @Param('id') id: string,
+    @Body() updatePlanDto: UpdatePlanDto,
+  ) {
+    const plan = await this.plansService.updateHotel(id, updatePlanDto);
+
+    return plan.toObject();
+  }
+
   @UseGuards(JwtGuard)
   @Post('plans/:id/excludes')
   @HttpCode(200)

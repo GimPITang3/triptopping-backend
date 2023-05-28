@@ -461,6 +461,34 @@ export class ScheduleRecommendService {
     return candidates;
   }
 
+  async updateHotel(plan: Plan): Promise<Plan> {
+    const lodgings = await this.retreiveLodging(plan.loc);
+    const index = lodgings.findIndex(
+      (lodging) => !plan.excludes.includes(lodging.place_id),
+    );
+    const isKorea =
+      plan.loc.lat > 33 &&
+      plan.loc.lat < 43 &&
+      plan.loc.lng > 124 &&
+      plan.loc.lng < 132;
+    plan.itinerary.forEach((daily, day) => {
+      if (isKorea) {
+        daily[0].system.details = lodgings[index];
+        daily[daily.length - 1].system.details = lodgings[index];
+      } else {
+        if (day === 0) {
+          daily[daily.length - 1].system.details = lodgings[index];
+        } else if (day === plan.itinerary.length - 1) {
+          daily[0].system.details = lodgings[index];
+        } else {
+          daily[0].system.details = lodgings[index];
+          daily[daily.length - 1].system.details = lodgings[index];
+        }
+      }
+    });
+    return plan;
+  }
+
   /**
    * It will fill itinerary of the given plan in-place.
    * @param plan
