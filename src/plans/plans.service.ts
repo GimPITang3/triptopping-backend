@@ -5,9 +5,14 @@ import { Model, Types } from 'mongoose';
 import { createId } from '@paralleldrive/cuid2';
 
 import { ScheduleRecommendService } from 'src/schedule-recommend/schedule-recommend.service';
+
+import { Plan, PlanDocument } from './plan.schema';
+import { User, UserDocument } from 'src/users/user.schema';
+
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
-import { Plan, PlanDocument } from './plan.schema';
+import { PaginationResponseDto } from 'src/pagination/pagination-response.dto';
+import { PaginationOptionsDto } from 'src/pagination/pagination-options.dto';
 
 export class PlanNotFoundError extends Error {
   constructor() {
@@ -18,9 +23,41 @@ export class PlanNotFoundError extends Error {
 @Injectable()
 export class PlansService {
   constructor(
+    @InjectModel(User.name) private readonly usersModel: Model<UserDocument>,
     @InjectModel(Plan.name) private readonly plansModel: Model<PlanDocument>,
     private readonly scheduleRecommend: ScheduleRecommendService,
   ) {}
+
+  async paginate(
+    userId: string,
+    dto: PaginationOptionsDto,
+  ): Promise<PaginationResponseDto<Plan>> {
+    const user = await this.usersModel.findOne({ userId }).exec();
+
+    if (!user) {
+      throw new Error('user not found');
+    }
+
+    const query = this.plansModel.find({
+      author: user._id,
+      deletedAt: undefined,
+    });
+
+    const total = await query.clone().count().exec();
+    const plans = await query
+      .clone()
+      .skip(dto.skip)
+      .limit(dto.limit)
+      .select('-routes -itinerary')
+      .exec();
+
+    return {
+      skip: dto.skip,
+      limit: dto.limit,
+      total: total,
+      items: plans.map((plan) => plan.toObject()),
+    };
+  }
 
   async findAll(): Promise<PlanDocument[]> {
     const plans = await this.plansModel

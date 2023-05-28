@@ -8,69 +8,83 @@ import {
   Patch,
   Post,
   Put,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
+
+import { PlansService } from './plans.service';
+import { JwtGuard } from 'src/auth/guards/jwt.guard';
 
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
-import { PlansService } from './plans.service';
 import { ExcludePlacesDto } from './dto/exclude-places.dto';
+import { PaginationOptionsDto } from 'src/pagination/pagination-options.dto';
 
-@Controller('plans')
+@Controller()
 export class PlansController {
   constructor(private plansService: PlansService) {}
 
-  // 지워지지 않은 모든 plan을 반환한다.
-  //! 테스트용 API
-  @Get()
+  @Get('plans')
   async findAll() {
     const plans = await this.plansService.findAll();
     return plans.map((plan) => plan.toObject());
   }
 
-  @Get(':id')
+  @Get('users/:uid/plans')
+  async paginate(
+    @Query() dto: PaginationOptionsDto,
+    @Param('uid') userId: string,
+  ) {
+    const result = await this.plansService.paginate(userId, dto);
+
+    return result;
+  }
+
+  @Get('plans/:id')
   async findById(@Param('id') id: string) {
     const plan = await this.plansService.findById(id);
 
     return plan.toObject();
   }
 
-  // @UseGuards(JwtGuard)
-  @Post()
+  @UseGuards(JwtGuard)
+  @Post('plans')
   async create(@Body() createPlanDto: CreatePlanDto) {
     const plan = await this.plansService.create(createPlanDto);
 
     return plan.toObject();
   }
 
-  // @UseGuards(JwtGuard)
-  @Patch(':id')
+  @UseGuards(JwtGuard)
+  @Patch('plans/:id')
   async update(@Param('id') id: string, @Body() updatePlanDto: UpdatePlanDto) {
     const plan = await this.plansService.update(id, updatePlanDto);
 
     return plan.toObject();
   }
 
-  // @UseGuards(JwtGuard)
-  @Put(':id')
+  @UseGuards(JwtGuard)
+  @Put('plans/:id')
   async replace(@Body() _replacePlanDto: any) {
     // TODO:
     return;
   }
 
-  // @UseGuards(JwtGuard)
-  @Delete(':id')
+  @UseGuards(JwtGuard)
+  @Delete('plans/:id')
   async delete(@Param('id') id: string) {
     await this.plansService.delete(id);
   }
 
-  @Get(':id/detail')
+  @Get('plans/:id/detail')
   async getDetails(@Param('id') id: string) {
     const plan = await this.plansService.getDetails(id);
 
     return plan.toObject();
   }
 
-  @Post(':id/excludes')
+  @UseGuards(JwtGuard)
+  @Post('plans/:id/excludes')
   @HttpCode(200)
   async excludePlaces(@Param('id') id: string, @Body() dto: ExcludePlacesDto) {
     await this.plansService.excludePlaces(id, dto.placeIds);
