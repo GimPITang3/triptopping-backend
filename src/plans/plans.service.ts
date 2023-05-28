@@ -46,8 +46,8 @@ export class PlansService {
     const total = await query.clone().count().exec();
     const plans = await query
       .clone()
-      .skip(parseInt(dto.skip.toString()))
-      .limit(parseInt(dto.limit.toString()))
+      .skip(dto.skip)
+      .limit(dto.limit)
       .select('-routes -itinerary')
       .exec();
 
