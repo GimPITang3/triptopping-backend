@@ -12,9 +12,6 @@ export class CreatePlanDto {
   @IsString()
   name: string;
 
-  @IsString()
-  author: string;
-
   @IsNumber()
   numberOfMembers: number;
 
