@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 import { createId } from '@paralleldrive/cuid2';
 
@@ -213,10 +213,13 @@ export class PlansService {
     planId: string,
     dto: InviteMemberDto,
   ): Promise<PlanDocument> {
-    const plan = await this.plansModel.findOne({
-      planId,
-      deletedAt: undefined,
-    });
+    const plan = await this.plansModel
+      .findOne({
+        planId,
+        deletedAt: undefined,
+      })
+      .populate('members')
+      .exec();
 
     if (!plan) {
       throw new PlanNotFoundError();
@@ -228,7 +231,9 @@ export class PlansService {
       })
       .exec();
 
-    plan.members.addToSet(...users);
+    plan.members = plan.members.addToSet(...users) as Types.DocumentArray<User>;
+
+    await plan.save();
 
     return plan;
   }
