@@ -5,7 +5,7 @@ import { Model } from 'mongoose';
 import { createId } from '@paralleldrive/cuid2';
 
 import { Article, ArticleDocument, Comment } from './article.schema';
-import { User } from 'src/users/user.schema';
+import { User, UserDocument } from 'src/users/user.schema';
 import { Plan, PlanDocument } from 'src/plans/plan.schema';
 
 import { CreateArticleDto } from './dto/create-article.dto';
@@ -28,13 +28,26 @@ export class ArticlesService {
     private readonly articleModel: Model<ArticleDocument>,
     @InjectModel(Plan.name)
     private readonly planModel: Model<PlanDocument>,
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
   ) {}
 
   async paginate(
-    dto: PaginationOptionsDto,
+    dto: PaginationOptionsDto & { userId?: string },
   ): Promise<PaginationResponseDto<Article>> {
+    let userDocId;
+
+    if (dto.userId) {
+      const user = await this.userModel.findOne({ userId: dto.userId }).exec();
+      userDocId = user._id;
+    }
+
     const query = this.articleModel
-      .find({})
+      .find({
+        ...(userDocId && {
+          author: userDocId,
+        }),
+      })
       .populate('author')
       .populate('comments.author')
       .populate('likes')

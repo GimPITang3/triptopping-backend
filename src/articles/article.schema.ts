@@ -67,3 +67,6 @@ export class Article {
 }
 
 export const ArticleSchema = SchemaFactory.createForClass(Article);
+ArticleSchema.pre('find', function () {
+  this.populate('author');
+});
