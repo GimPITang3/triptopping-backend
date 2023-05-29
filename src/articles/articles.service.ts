@@ -51,7 +51,7 @@ export class ArticlesService {
       .populate('author')
       .populate('comments.author')
       .populate('likes')
-      .populate('plan')
+      .populate('plan', 'tags')
       .sort({ createdAt: 'desc' });
 
     const total = await query.clone().count().exec();
