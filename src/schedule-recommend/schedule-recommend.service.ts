@@ -163,7 +163,8 @@ export class ScheduleRecommendService {
     });
 
     let day = 0;
-    while (candidates.length > 0) {
+    const complete = Array(parts).fill(false);
+    while (candidates.length > 0 && !complete.every((value) => value)) {
       let hMinDist = Number.MAX_SAFE_INTEGER;
       let minIdx = -1;
       candidates.forEach((place, idx) => {
@@ -186,17 +187,18 @@ export class ScheduleRecommendService {
           minIdx = idx;
         }
       });
-      const candidate = candidates.splice(minIdx, 1)[0];
-      const isNearBy = result[day].some(
-        (place) =>
-          haversineDistance(
-            place.place.geometry.location,
-            candidate.geometry.location,
-          ) < 200,
-      );
       const dayLength = isCreated ? itineray[day].length - 4 : 5;
-      if (!isNearBy) {
-        if (result[day].length < dayLength) {
+      if (result[day].length < dayLength) {
+        const candidate = candidates.splice(minIdx, 1)[0];
+        const isNearBy = result[day].some(
+          (place) =>
+            haversineDistance(
+              place.place.geometry.location,
+              candidate.geometry.location,
+            ) < 200,
+        );
+        console.log(isNearBy, result[day].length < dayLength, candidate.name);
+        if (!isNearBy) {
           result[day].push({
             place: candidate,
             isManaul: false,
@@ -206,11 +208,13 @@ export class ScheduleRecommendService {
             result[day].map((a) => a.place.name),
           );
           console.log(day, result[day].length, dayLength);
-          day++;
-          if (day >= parts) {
-            day -= parts;
-          }
         }
+      } else {
+        complete[day] = true;
+      }
+      day++;
+      if (day >= parts) {
+        day -= parts;
       }
     }
 
@@ -220,23 +224,25 @@ export class ScheduleRecommendService {
     return result;
   }
 
-  async addRestaurants(chunks: RecommendPlace[][]) {
+  async addRestaurants(chunks: RecommendPlace[][], excludes: string[]) {
     const findMinDistRestaurantIndex = (
       place: Partial<PlaceData>,
       restaurants: Partial<PlaceData>[],
     ) => {
       let minDist = Number.MAX_SAFE_INTEGER;
       let minIdx = -1;
-      restaurants.forEach((restaurant, idx) => {
-        const dist = haversineDistance(
-          place.geometry.location,
-          restaurant.geometry.location,
-        );
-        if (dist < minDist) {
-          minDist = dist;
-          minIdx = idx;
-        }
-      });
+      restaurants
+        .filter((restaurant) => !excludes.includes(restaurant.place_id))
+        .forEach((restaurant, idx) => {
+          const dist = haversineDistance(
+            place.geometry.location,
+            restaurant.geometry.location,
+          );
+          if (dist < minDist) {
+            minDist = dist;
+            minIdx = idx;
+          }
+        });
       return minIdx;
     };
     const promises = chunks.map(async (chunk) => {
@@ -281,6 +287,7 @@ export class ScheduleRecommendService {
     itinerary: ItineraryDaily[],
     weightedTag: WeightedTag,
     isCreated: boolean,
+    excludes: string[],
   ): Promise<RecommendPlace[][]> {
     const splitedChunks = this.splitByDistance(
       landmarks,
@@ -291,7 +298,7 @@ export class ScheduleRecommendService {
       isCreated,
     );
 
-    await this.addRestaurants(splitedChunks);
+    await this.addRestaurants(splitedChunks, excludes);
 
     return splitedChunks;
   }
@@ -554,6 +561,7 @@ export class ScheduleRecommendService {
       plan.itinerary,
       weightedTag,
       isCreated,
+      plan.excludes,
     );
     // Plan daily itinerary
     plan.itinerary.forEach((daily, dayIndex) => {
