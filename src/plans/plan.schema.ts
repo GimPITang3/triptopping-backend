@@ -108,4 +108,9 @@ export class Plan {
 export const PlanSchema = SchemaFactory.createForClass(Plan);
 PlanSchema.pre('find', function () {
   this.populate('members');
+  this.populate('author');
+});
+PlanSchema.pre('findOne', function () {
+  this.populate('members');
+  this.populate('author');
 });
