@@ -6,7 +6,10 @@ import { Itinerary } from './interfaces/itinerary.interface';
 import { LatLng } from 'src/interfaces/lat-lng.interface';
 import { User } from 'src/users/user.schema';
 
-export type PlanDocument = HydratedDocument<Plan>;
+export type PlanDocument = HydratedDocument<
+  Plan,
+  { members: Types.DocumentArray<User> }
+>;
 export type WeightedTagDocument = HydratedDocument<WeightedTag>;
 
 @Schema()
@@ -55,8 +58,11 @@ export class Plan {
   @Prop()
   numberOfMembers: number;
 
-  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: User.name }] })
-  members: Types.ObjectId[];
+  @Prop({
+    type: [{ type: MongooseSchema.Types.ObjectId, ref: User.name }],
+    default: [],
+  })
+  members: User[];
 
   @Prop()
   startDate?: Date;
@@ -100,3 +106,6 @@ export class Plan {
 }
 
 export const PlanSchema = SchemaFactory.createForClass(Plan);
+PlanSchema.pre('find', function () {
+  this.populate('members');
+});

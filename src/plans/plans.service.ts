@@ -15,6 +15,7 @@ import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
 import { PaginationResponseDto } from 'src/pagination/pagination-response.dto';
 import { PaginationOptionsDto } from 'src/pagination/pagination-options.dto';
+import { InviteMemberDto } from './dto/invite-member.dto';
 
 export class PlanNotFoundError extends Error {
   constructor() {
@@ -206,5 +207,29 @@ export class PlansService {
     plan.excludes = Array.from(new Set(plan.excludes.concat(placeIds)));
 
     await plan.save();
+  }
+
+  async inviteMember(
+    planId: string,
+    dto: InviteMemberDto,
+  ): Promise<PlanDocument> {
+    const plan = await this.plansModel.findOne({
+      planId,
+      deletedAt: undefined,
+    });
+
+    if (!plan) {
+      throw new PlanNotFoundError();
+    }
+
+    const users = await this.usersModel
+      .find({
+        userId: { $in: dto.userIds },
+      })
+      .exec();
+
+    plan.members.addToSet(...users);
+
+    return plan;
   }
 }
