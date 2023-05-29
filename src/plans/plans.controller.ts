@@ -26,6 +26,7 @@ import { PaginationOptionsDto } from 'src/pagination/pagination-options.dto';
 import { UserNotFoundError } from 'src/errors/user-not-found.error';
 import { Request } from 'express';
 import { User } from 'src/users/user.schema';
+import { InviteMemberDto } from './dto/invite-member.dto';
 
 @Controller()
 export class PlansController {
@@ -116,5 +117,13 @@ export class PlansController {
   @HttpCode(200)
   async excludePlaces(@Param('id') id: string, @Body() dto: ExcludePlacesDto) {
     await this.plansService.excludePlaces(id, dto.placeIds);
+  }
+
+  @UseGuards(JwtGuard)
+  @Post('plans/:id/members')
+  async inviteMember(@Param('id') id: string, @Body() dto: InviteMemberDto) {
+    const plan = await this.plansService.inviteMember(id, dto);
+
+    return plan.toObject();
   }
 }

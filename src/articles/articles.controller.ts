@@ -13,26 +13,38 @@ import {
 } from '@nestjs/common';
 
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
+
 import { ArticlesService } from './articles.service';
+import { User } from 'src/users/user.schema';
+
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
-import { User } from 'src/users/user.schema';
-import { PaginationOptionsDto } from 'src/pagination/pagination-options.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
+import { PaginationOptionsDto } from 'src/pagination/pagination-options.dto';
 
-@Controller('articles')
+@Controller()
 export class ArticlesController {
   constructor(private readonly articlesService: ArticlesService) {}
 
-  @Get()
-  async findAll(@Query() dto: PaginationOptionsDto) {
+  @Get('articles')
+  async paginate(@Query() dto: PaginationOptionsDto) {
     const pagination = await this.articlesService.paginate(dto);
 
     return pagination;
   }
 
-  @Get(':id')
+  @Get('users/:uid/articles')
+  async paginateForUser(
+    @Query() dto: PaginationOptionsDto,
+    @Param('uid') userId: string,
+  ) {
+    const pagination = await this.articlesService.paginate({ ...dto, userId });
+
+    return pagination;
+  }
+
+  @Get('articles/:id')
   async findById(@Param('id') id: string) {
     const article = await this.articlesService.findById(id);
 
@@ -40,7 +52,7 @@ export class ArticlesController {
   }
 
   @UseGuards(JwtGuard)
-  @Post()
+  @Post('articles')
   async create(
     @Body() dto: CreateArticleDto,
     @Req() request: Request & { user: User },
@@ -51,7 +63,7 @@ export class ArticlesController {
   }
 
   @UseGuards(JwtGuard)
-  @Patch(':id')
+  @Patch('articles/:id')
   async update(@Param('id') id: string, @Body() dto: UpdateArticleDto) {
     const article = await this.articlesService.update(id, dto);
 
@@ -59,12 +71,12 @@ export class ArticlesController {
   }
 
   @UseGuards(JwtGuard)
-  @Delete(':id')
+  @Delete('articles/:id')
   async delete(@Param('id') id: string) {
     await this.articlesService.delete(id);
   }
 
-  @Get(':id/comments')
+  @Get('articles/:id/comments')
   async getComments(@Param('id') id: string) {
     const comments = await this.articlesService.getComments(id);
 
@@ -72,7 +84,7 @@ export class ArticlesController {
   }
 
   @UseGuards(JwtGuard)
-  @Post(':id/comments')
+  @Post('articles/:id/comments')
   async createComment(
     @Param('id') id: string,
     @Body() dto: CreateCommentDto,
@@ -88,7 +100,7 @@ export class ArticlesController {
   }
 
   @UseGuards(JwtGuard)
-  @Patch(':id/comments/:cid')
+  @Patch('articles/:id/comments/:cid')
   async updateComment(
     @Param('id') id: string,
     @Param('cid') cid: string,
@@ -100,7 +112,7 @@ export class ArticlesController {
   }
 
   @UseGuards(JwtGuard)
-  @Delete(':id/comments/:cid')
+  @Delete('articles/:id/comments/:cid')
   async deleteComment(@Param('id') id: string, @Param('cid') cid: string) {
     const article = await this.articlesService.deleteComment(id, cid);
 
@@ -108,9 +120,23 @@ export class ArticlesController {
   }
 
   @UseGuards(JwtGuard)
-  @Post(':id/likes')
-  async incLikes(@Param('id') id: string) {
-    const article = await this.articlesService.incLikes(id);
+  @Post('articles/:id/like')
+  async like(
+    @Param('id') id: string,
+    @Req() request: Request & { user: User },
+  ) {
+    const article = await this.articlesService.setLike(request.user, id, true);
+
+    return article.toObject();
+  }
+
+  @UseGuards(JwtGuard)
+  @Delete('articles/:id/like')
+  async unlike(
+    @Param('id') id: string,
+    @Req() request: Request & { user: User },
+  ) {
+    const article = await this.articlesService.setLike(request.user, id, false);
 
     return article.toObject();
   }
