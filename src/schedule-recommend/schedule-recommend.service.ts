@@ -197,17 +197,11 @@ export class ScheduleRecommendService {
               candidate.geometry.location,
             ) < 200,
         );
-        console.log(isNearBy, result[day].length < dayLength, candidate.name);
         if (!isNearBy) {
           result[day].push({
             place: candidate,
             isManaul: false,
           });
-          console.log(
-            day,
-            result[day].map((a) => a.place.name),
-          );
-          console.log(day, result[day].length, dayLength);
         }
       } else {
         complete[day] = true;
