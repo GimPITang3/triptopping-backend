@@ -33,7 +33,7 @@ export class Comment {
 
 const CommentSchema = SchemaFactory.createForClass(Comment);
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, versionKey: false })
 export class Article {
   @Prop({ isRequired: true })
   title: string;
@@ -53,8 +53,8 @@ export class Article {
   @Prop([CommentSchema])
   comments: CommentDocument[];
 
-  @Prop({ default: 0 })
-  likes: number;
+  @Prop({ type: [MongooseSchema.Types.ObjectId], ref: User.name, default: [] })
+  likes: User[];
 
   @Prop()
   createdAt: Date;

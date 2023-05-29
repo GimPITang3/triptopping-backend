@@ -37,6 +37,7 @@ export class ArticlesService {
       .find({})
       .populate('author')
       .populate('comments.author')
+      .populate('likes')
       .sort({ createdAt: 'desc' });
 
     const total = await query.clone().count().exec();
@@ -56,6 +57,7 @@ export class ArticlesService {
       .populate('author')
       .populate('plan')
       .populate('comments.author')
+      .populate('likes')
       .exec();
 
     if (!article) {
@@ -99,6 +101,8 @@ export class ArticlesService {
         { returnOriginal: false },
       )
       .populate('comments.author')
+      .populate('likes')
+      .populate('author')
       .exec();
 
     if (!article) {
@@ -124,6 +128,7 @@ export class ArticlesService {
   async getComments(articleId: string): Promise<Comment[]> {
     const article = await this.articleModel
       .findOne({ articleId: articleId })
+      .populate('comments.author')
       .select('comments')
       .exec();
 
@@ -138,6 +143,8 @@ export class ArticlesService {
     const article = await this.articleModel
       .findOne({ articleId, deletedAt: undefined })
       .populate('comments.author')
+      .populate('likes')
+      .populate('author')
       .exec();
 
     if (!article) {
@@ -163,6 +170,8 @@ export class ArticlesService {
     const article = await this.articleModel
       .findOne({ articleId, deletedAt: undefined })
       .populate('comments.author')
+      .populate('likes')
+      .populate('author')
       .exec();
 
     if (!article) {
@@ -187,6 +196,8 @@ export class ArticlesService {
     const article = await this.articleModel
       .findOne({ articleId, deletedAt: undefined })
       .populate('comments.author')
+      .populate('likes')
+      .populate('author')
       .exec();
 
     if (!article) {
@@ -204,17 +215,37 @@ export class ArticlesService {
     return article;
   }
 
-  async incLikes(articleId: string): Promise<ArticleDocument> {
+  async setLike(
+    user: User,
+    articleId: string,
+    add: boolean,
+  ): Promise<ArticleDocument> {
     const article = await this.articleModel
       .findOne({ articleId, deletedAt: undefined })
       .populate('comments.author')
+      .populate('likes')
+      .populate('author')
       .exec();
 
     if (!article) {
       throw new ArticleNotFoundError();
     }
 
-    article.likes++;
+    if (!Array.isArray(article.likes)) {
+      article.likes = [];
+    }
+
+    if (add) {
+      if (article.likes.find((i) => i.userId == user.userId) === undefined) {
+        article.likes.push(user);
+      }
+    } else {
+      const idx = article.likes.findIndex((i) => i.userId == user.userId);
+
+      if (idx !== -1) {
+        article.likes.splice(idx, 1);
+      }
+    }
 
     await article.save();
 

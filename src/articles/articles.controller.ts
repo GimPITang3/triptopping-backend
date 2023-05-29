@@ -108,9 +108,23 @@ export class ArticlesController {
   }
 
   @UseGuards(JwtGuard)
-  @Post(':id/likes')
-  async incLikes(@Param('id') id: string) {
-    const article = await this.articlesService.incLikes(id);
+  @Post(':id/like')
+  async like(
+    @Param('id') id: string,
+    @Req() request: Request & { user: User },
+  ) {
+    const article = await this.articlesService.setLike(request.user, id, true);
+
+    return article.toObject();
+  }
+
+  @UseGuards(JwtGuard)
+  @Delete(':id/like')
+  async unlike(
+    @Param('id') id: string,
+    @Req() request: Request & { user: User },
+  ) {
+    const article = await this.articlesService.setLike(request.user, id, false);
 
     return article.toObject();
   }
