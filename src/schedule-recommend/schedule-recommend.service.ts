@@ -63,6 +63,7 @@ export class ScheduleRecommendService {
     parts: number,
     itineray: ItineraryDaily[],
     weightedTag: WeightedTag,
+    isCreated: boolean,
   ): RecommendPlace[][] {
     // sorting...
     const result: RecommendPlace[][] = [];
@@ -191,20 +192,25 @@ export class ScheduleRecommendService {
           haversineDistance(
             place.place.geometry.location,
             candidate.geometry.location,
-          ) < 100,
+          ) < 200,
       );
+      const dayLength = isCreated ? itineray[day].length - 4 : 5;
       if (!isNearBy) {
-        result[day].push({
-          place: candidate,
-          isManaul: false,
-        });
-        day++;
-        if (day >= parts) {
-          day -= parts;
+        if (result[day].length < dayLength) {
+          result[day].push({
+            place: candidate,
+            isManaul: false,
+          });
+          console.log(
+            day,
+            result[day].map((a) => a.place.name),
+          );
+          console.log(day, result[day].length, dayLength);
+          day++;
+          if (day >= parts) {
+            day -= parts;
+          }
         }
-      }
-      if (result.every((day) => day.length >= 5)) {
-        break;
       }
     }
 
@@ -274,6 +280,7 @@ export class ScheduleRecommendService {
     parts: number,
     itinerary: ItineraryDaily[],
     weightedTag: WeightedTag,
+    isCreated: boolean,
   ): Promise<RecommendPlace[][]> {
     const splitedChunks = this.splitByDistance(
       landmarks,
@@ -281,6 +288,7 @@ export class ScheduleRecommendService {
       parts,
       itinerary,
       weightedTag,
+      isCreated,
     );
 
     await this.addRestaurants(splitedChunks);
@@ -496,6 +504,7 @@ export class ScheduleRecommendService {
   async recommend(plan: Plan): Promise<Plan> {
     // Make itinerary array to have exact length
     plan.itinerary = plan.itinerary.slice(0, plan.period);
+    const isCreated = plan.itinerary.length > 0;
     if (plan.itinerary.length < plan.period) {
       plan.itinerary = plan.itinerary.concat(
         Array(plan.period - plan.itinerary.length)
@@ -544,6 +553,7 @@ export class ScheduleRecommendService {
       plan.period,
       plan.itinerary,
       weightedTag,
+      isCreated,
     );
     // Plan daily itinerary
     plan.itinerary.forEach((daily, dayIndex) => {
