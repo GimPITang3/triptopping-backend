@@ -89,6 +89,7 @@ export class ArticlesService {
     const article = new this.articleModel({
       title: dto.title,
       content: dto.content,
+      coverImageUrl: dto.coverImageUrl,
       articleId: createId(),
       author: user,
       plan: plan,
