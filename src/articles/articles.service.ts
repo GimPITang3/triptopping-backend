@@ -111,6 +111,7 @@ export class ArticlesService {
         {
           ...{ title: dto.title },
           ...{ content: dto.content },
+          ...{ coverImageUrl: dto.coverImageUrl },
           ...{ plan: plan },
         },
         { returnOriginal: false },
