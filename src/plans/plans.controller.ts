@@ -27,6 +27,7 @@ import { UserNotFoundError } from 'src/errors/user-not-found.error';
 import { Request } from 'express';
 import { User } from 'src/users/user.schema';
 import { InviteMemberDto } from './dto/invite-member.dto';
+import { GoogleMapsServiceError } from 'src/errors/google-maps-service';
 
 @Controller()
 export class PlansController {
@@ -97,9 +98,20 @@ export class PlansController {
 
   @Get('plans/:id/detail')
   async getDetails(@Param('id') id: string) {
-    const plan = await this.plansService.getDetails(id);
+    try {
+      const plan = await this.plansService.getDetails(id);
 
-    return plan.toObject();
+      return plan.toObject();
+    } catch (e) {
+      if (e instanceof GoogleMapsServiceError) {
+        throw new HttpException(
+          `Failed to get details: ${e.message}`,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      } else {
+        throw e;
+      }
+    }
   }
 
   @Patch('plans/:id/hotel')

@@ -10,6 +10,10 @@ import {
   PlaceType1,
   Status,
 } from '@googlemaps/google-maps-services-js';
+import { v2 } from '@google-cloud/translate';
+import * as haversineDistance from 'haversine-distance';
+import { Duration } from 'luxon';
+
 import { Plan, WeightedTag, WeightedTagDocument } from 'src/plans/plan.schema';
 import { GOOGLE_MAPS_ACCESS_KEY_TOKEN } from 'src/google-maps/google-maps.constants';
 
@@ -19,15 +23,11 @@ import {
   ScheduleSlot,
   ScheduleType,
 } from 'src/plans/interfaces/itinerary.interface';
-import { Needs } from './interfaces/needs.interface';
-
-import * as haversineDistance from 'haversine-distance';
-import { Duration } from 'luxon';
 
 import { LatLng } from 'src/interfaces/lat-lng.interface';
-import { v2 } from '@google-cloud/translate';
 import { TranslatePlaceData } from './interfaces/translated-place-data.interface';
 import { OpenaiService } from 'src/openai/openai.service';
+import { GoogleMapsServiceError } from 'src/errors/google-maps-service';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -309,7 +309,10 @@ export class ScheduleRecommendService {
       });
 
       if (cityResp.data.status !== Status.OK) {
-        throw new Error('status is not okay: ' + cityResp.data.error_message);
+        throw new GoogleMapsServiceError(
+          cityResp.data.status,
+          cityResp.data.error_message,
+        );
       }
       if (cityResp.data.candidates.length == 0) {
         throw new Error('no candidates');
@@ -349,7 +352,10 @@ export class ScheduleRecommendService {
       });
 
     if (resp.data.status !== Status.OK) {
-      throw new Error(`status is not okay: ${resp.data.error_message}`);
+      throw new GoogleMapsServiceError(
+        resp.data.status,
+        resp.data.error_message,
+      );
     }
     if (resp.data.results.length == 0) {
       throw new Error('no results');
@@ -454,7 +460,7 @@ export class ScheduleRecommendService {
       const { next_page_token, results, status, error_message } = resp.data;
 
       if (status !== Status.OK) {
-        throw new Error(`${status} ${error_message}`);
+        throw new GoogleMapsServiceError(status, error_message);
       }
 
       candidates = candidates.concat(results);
@@ -639,7 +645,7 @@ export class ScheduleRecommendService {
         const { status, error_message, routes } = resp.data;
 
         if (status !== Status.OK) {
-          throw new Error(error_message);
+          throw new GoogleMapsServiceError(status, error_message);
         }
 
         const route = routes[0];
