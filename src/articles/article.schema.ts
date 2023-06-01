@@ -50,6 +50,9 @@ export class Article {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: Plan.name })
   plan?: Plan;
 
+  @Prop()
+  coverImageUrl: string;
+
   @Prop([CommentSchema])
   comments: CommentDocument[];
 

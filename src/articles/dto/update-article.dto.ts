@@ -12,4 +12,8 @@ export class UpdateArticleDto {
   @IsString()
   @IsOptional()
   planId?: string;
+
+  @IsString()
+  @IsOptional()
+  coverImageUrl?: string;
 }
