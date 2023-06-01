@@ -51,9 +51,9 @@ export class Article {
   plan?: Plan;
 
   @Prop()
-  coverImageUrl: string;
+  coverImageUrl?: string;
 
-  @Prop([CommentSchema])
+  @Prop({ type: [CommentSchema], default: [] })
   comments: CommentDocument[];
 
   @Prop({ type: [MongooseSchema.Types.ObjectId], ref: User.name, default: [] })
