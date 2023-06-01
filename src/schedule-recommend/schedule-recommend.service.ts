@@ -187,9 +187,9 @@ export class ScheduleRecommendService {
           minIdx = idx;
         }
       });
+      const candidate = candidates.splice(minIdx, 1)[0];
       const dayLength = isCreated ? itineray[day].length - 4 : 5;
       if (result[day].length < dayLength) {
-        const candidate = candidates.splice(minIdx, 1)[0];
         const isNearBy = result[day].some(
           (place) =>
             haversineDistance(
@@ -283,6 +283,9 @@ export class ScheduleRecommendService {
     isCreated: boolean,
     excludes: string[],
   ): Promise<RecommendPlace[][]> {
+    if (landmarks.length < parts * 2) {
+      throw new Error('too few landmarks');
+    }
     const splitedChunks = this.splitByDistance(
       landmarks,
       center,
@@ -657,5 +660,10 @@ export class ScheduleRecommendService {
     );
 
     return plan;
+  }
+
+  async fastRecommend(pos: LatLng): Promise<Partial<TranslatePlaceData>[]> {
+    const data = await this.retreiveLandmarks(pos);
+    return data.slice(0, 5);
   }
 }
