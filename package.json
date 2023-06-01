@@ -8,7 +8,7 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "./node_modules/pm2/bin/pm2-runtime app.js",
+    "start": "./node_modules/pm2/bin/pm2-runtime dist/main.js",
     "poststart":  "node ./node_modules/pm2/bin/pm2 logs",
     "start:nest": "nest start",
     "start:dev": "nest start --watch",
