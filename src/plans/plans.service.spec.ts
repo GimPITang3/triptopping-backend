@@ -1,15 +1,16 @@
 import { getModelToken } from '@nestjs/mongoose';
 import { Test } from '@nestjs/testing';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 
 import { Plan } from './plan.schema';
+import { User } from 'src/users/user.schema';
 import { PlansService } from './plans.service';
 
 const mockPlan = ({}): Plan => {
   return {
     planId: '1',
     name: 'title of the plan',
-    author: new Types.ObjectId(),
+    author: new User(),
     members: [],
     itinerary: [],
     numberOfMembers: 0,

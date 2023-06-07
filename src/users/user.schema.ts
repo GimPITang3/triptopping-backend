@@ -16,6 +16,8 @@ const GoogleProviderSchema = SchemaFactory.createForClass(GoogleProvider);
 
 @Schema({ timestamps: true })
 export class User {
+  static readonly modelName = 'User';
+
   @Prop({ required: true, unique: true })
   /** DB independent ID of user, auto-generated. */
   userId: string;

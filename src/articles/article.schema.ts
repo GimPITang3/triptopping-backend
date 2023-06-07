@@ -35,6 +35,8 @@ const CommentSchema = SchemaFactory.createForClass(Comment);
 
 @Schema({ timestamps: true, versionKey: false })
 export class Article {
+  static readonly modelName = 'Article';
+
   @Prop({ isRequired: true })
   title: string;
 

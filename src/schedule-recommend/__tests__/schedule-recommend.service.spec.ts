@@ -5,7 +5,7 @@ import { GoogleMapsModule } from 'src/google-maps/google-maps.module';
 
 import { ScheduleRecommendService } from '../schedule-recommend.service';
 import { Plan } from 'src/plans/plan.schema';
-import { Types } from 'mongoose';
+import { User } from 'src/users/user.schema';
 
 import { Duration } from 'luxon';
 import { LatLngLiteral } from '@googlemaps/google-maps-services-js';
@@ -77,7 +77,7 @@ describe('ScheduleRecommendService', () => {
     beforeAll(async () => {
       plan = {
         planId: '',
-        author: new Types.ObjectId(),
+        author: new User(),
         budget: 0,
         itinerary: [],
         members: [],

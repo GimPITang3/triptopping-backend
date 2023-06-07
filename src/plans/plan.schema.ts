@@ -45,6 +45,8 @@ const WeightedTagSchema = SchemaFactory.createForClass(WeightedTag);
 
 @Schema({ timestamps: true })
 export class Plan {
+  static readonly modelName = 'Plan';
+
   @Prop({ required: true, unique: true })
   /** DB independent id, auto-generated. */
   planId: string;
@@ -53,7 +55,7 @@ export class Plan {
   name: string;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: User.name, required: true })
-  author: Types.ObjectId;
+  author: User;
 
   @Prop()
   numberOfMembers: number;
