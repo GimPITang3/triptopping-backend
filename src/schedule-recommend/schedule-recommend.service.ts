@@ -672,6 +672,11 @@ export class ScheduleRecommendService {
     const data = await this.retreiveLandmarks(pos);
     return data
       .filter((place) => haversineDistance(pos, place.geometry.location) < 5000)
-      .slice(0, 5);
+      .slice(0, 5)
+      .sort(
+        (a, b) =>
+          haversineDistance(pos, a.geometry.location) -
+          haversineDistance(pos, b.geometry.location),
+      );
   }
 }
