@@ -84,4 +84,12 @@ export class UsersService {
 
     return user;
   }
+
+  async delete(id: string): Promise<void> {
+    try {
+      await this.userModel.deleteOne({ userId: id });
+    } catch {
+      throw new UserNotFoundError();
+    }
+  }
 }

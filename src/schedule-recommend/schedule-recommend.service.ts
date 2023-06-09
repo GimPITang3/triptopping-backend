@@ -670,6 +670,13 @@ export class ScheduleRecommendService {
 
   async fastRecommend(pos: LatLng): Promise<Partial<TranslatePlaceData>[]> {
     const data = await this.retreiveLandmarks(pos);
-    return data.slice(0, 5);
+    return data
+      .filter((place) => haversineDistance(pos, place.geometry.location) < 5000)
+      .slice(0, 5)
+      .sort(
+        (a, b) =>
+          haversineDistance(pos, a.geometry.location) -
+          haversineDistance(pos, b.geometry.location),
+      );
   }
 }

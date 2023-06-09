@@ -67,4 +67,8 @@ export class AuthService {
 
     return await this.loginWithGoogle(id);
   }
+
+  async withdrawUser(userId: string) {
+    await this.usersService.delete(userId);
+  }
 }

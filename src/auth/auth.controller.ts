@@ -2,6 +2,7 @@ import { Request } from 'express';
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpException,
   HttpStatus,
@@ -19,6 +20,8 @@ import { GoogleAuthService } from './google/google-auth.service';
 import { GoogleSigninDto } from './dto/google-signin.dto';
 import { GoogleSignupDto } from './dto/google-signup.dto';
 import { UserNotFoundError } from 'src/errors/user-not-found.error';
+import { JwtGuard } from './guards/jwt.guard';
+import { User } from 'src/users/user.schema';
 
 @Controller('auth')
 export class AuthController {
@@ -106,5 +109,11 @@ export class AuthController {
         throw e;
       }
     }
+  }
+
+  @Delete('account')
+  @UseGuards(JwtGuard)
+  async withDrawal(@Req() request: Request & { user: User }) {
+    this.authService.withdrawUser(request.user.userId);
   }
 }
