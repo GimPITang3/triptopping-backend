@@ -8,7 +8,7 @@ import {
 } from '@casl/ability';
 
 import { User } from 'src/users/user.schema';
-import { Article } from 'src/articles/article.schema';
+import { Article, Comment } from 'src/articles/article.schema';
 import { Plan } from 'src/plans/plan.schema';
 
 export const Actions = {
@@ -21,7 +21,7 @@ export const Actions = {
 } as const;
 export type Actions = (typeof Actions)[keyof typeof Actions];
 
-export const Subjects = [User, Article, Plan] as const;
+export const Subjects = [User, Article, Plan, Comment] as const;
 export type Subjects = InferSubjects<(typeof Subjects)[number], true> | 'all';
 type _ModelNames = Pick<(typeof Subjects)[number], 'modelName'>['modelName'];
 
@@ -76,6 +76,7 @@ type FlatProperties<
 
 type FlatArticle = FlatProperties<Article>;
 type FlatPlan = FlatProperties<Plan>;
+type FlatComment = FlatProperties<Comment>;
 
 @Injectable()
 export class CaslAbilityFactory {
@@ -104,6 +105,11 @@ export class CaslAbilityFactory {
     can<Plan>('read', 'Plan');
     can<FlatPlan>('update', 'Plan', { 'author.userId': user.userId });
     can<FlatPlan>('delete', 'Plan', { 'author.userId': user.userId });
+
+    can<Comment>('create', 'Comment');
+    can<Comment>('read', 'Comment');
+    can<FlatComment>('update', 'Comment', { 'author.userId': user.userId });
+    can<FlatComment>('delete', 'Comment', { 'author.userId': user.userId });
 
     return build();
   }

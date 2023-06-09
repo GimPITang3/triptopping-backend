@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { CaslModule } from 'src/casl/casl.module';
+
 import { ArticlesService } from './articles.service';
 import { ArticlesController } from './articles.controller';
 
@@ -15,6 +17,7 @@ import { User, UserSchema } from 'src/users/user.schema';
       { name: Plan.name, schema: PlanSchema },
       { name: User.name, schema: UserSchema },
     ]),
+    CaslModule,
   ],
   providers: [ArticlesService],
   controllers: [ArticlesController],

@@ -12,6 +12,8 @@ export type ArticleDocument = HydratedDocument<
 
 @Schema({ timestamps: true })
 export class Comment {
+  static readonly modelName = 'Comment';
+
   @Prop({ unique: true })
   commentId: string;
 
@@ -56,7 +58,7 @@ export class Article {
   coverImageUrl?: string;
 
   @Prop({ type: [CommentSchema], default: [] })
-  comments: CommentDocument[];
+  comments: Comment[];
 
   @Prop({ type: [MongooseSchema.Types.ObjectId], ref: User.name, default: [] })
   likes: User[];

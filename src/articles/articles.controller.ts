@@ -9,13 +9,19 @@ import {
   Post,
   Query,
   Req,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
+import { GetUser } from 'src/auth/get-user.decorator';
 
 import { ArticlesService } from './articles.service';
 import { User } from 'src/users/user.schema';
+
+import { CaslGuard } from 'src/casl/casl.guard';
+import { Ability } from 'src/casl/ability.decorator';
+import { AppAbility } from 'src/casl/casl-ability.factory';
 
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
@@ -51,28 +57,49 @@ export class ArticlesController {
     return article.toObject();
   }
 
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, CaslGuard)
   @Post('articles')
   async create(
     @Body() dto: CreateArticleDto,
-    @Req() request: Request & { user: User },
+    @GetUser() user: User,
+    @Ability() ability: AppAbility,
   ) {
-    const article = await this.articlesService.create(request.user, dto);
+    if (!ability.can('create', 'Article')) {
+      throw new UnauthorizedException();
+    }
+
+    const article = await this.articlesService.create(user, dto);
 
     return article.toObject();
   }
 
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, CaslGuard)
   @Patch('articles/:id')
-  async update(@Param('id') id: string, @Body() dto: UpdateArticleDto) {
-    const article = await this.articlesService.update(id, dto);
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateArticleDto,
+    @Ability() ability: AppAbility,
+  ) {
+    const article = await this.articlesService.findById(id);
 
-    return article.toObject();
+    if (!ability.can('update', article)) {
+      throw new UnauthorizedException();
+    }
+
+    const updatedArticle = await this.articlesService.update(article, dto);
+
+    return updatedArticle.toObject();
   }
 
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, CaslGuard)
   @Delete('articles/:id')
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id') id: string, @Ability() ability: AppAbility) {
+    const article = await this.articlesService.findById(id);
+
+    if (!ability.can('delete', article)) {
+      throw new UnauthorizedException();
+    }
+
     await this.articlesService.delete(id);
   }
 
@@ -83,37 +110,53 @@ export class ArticlesController {
     return comments;
   }
 
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, CaslGuard)
   @Post('articles/:id/comments')
   async createComment(
     @Param('id') id: string,
     @Body() dto: CreateCommentDto,
-    @Req() request: Request & { user: User },
+    @GetUser() user: User,
+    @Ability() ability: AppAbility,
   ) {
-    const article = await this.articlesService.createComment(
-      request.user,
-      id,
-      dto,
-    );
+    if (!ability.can('create', 'Comment')) {
+      throw new UnauthorizedException();
+    }
+
+    const article = await this.articlesService.createComment(user, id, dto);
 
     return article.toObject();
   }
 
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, CaslGuard)
   @Patch('articles/:id/comments/:cid')
   async updateComment(
     @Param('id') id: string,
     @Param('cid') cid: string,
     @Body() dto: UpdateCommentDto,
+    @Ability() ability: AppAbility,
   ) {
+    // TODO: provide sophisticated comment object
+    if (!ability.can('update', 'Comment')) {
+      throw new UnauthorizedException();
+    }
+
     const article = await this.articlesService.updateComment(id, cid, dto);
 
     return article.toObject();
   }
 
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, CaslGuard)
   @Delete('articles/:id/comments/:cid')
-  async deleteComment(@Param('id') id: string, @Param('cid') cid: string) {
+  async deleteComment(
+    @Param('id') id: string,
+    @Param('cid') cid: string,
+    @Ability() ability: AppAbility,
+  ) {
+    // TODO: provide sophisticated comment object
+    if (!ability.can('delete', 'Comment')) {
+      throw new UnauthorizedException();
+    }
+
     const article = await this.articlesService.deleteComment(id, cid);
 
     return article.toObject();

@@ -100,32 +100,22 @@ export class ArticlesService {
     return article;
   }
 
-  async update(id: string, dto: UpdateArticleDto): Promise<ArticleDocument> {
+  async update(
+    article: ArticleDocument,
+    dto: UpdateArticleDto,
+  ): Promise<ArticleDocument> {
     const plan = await this.planModel
       .findOne({ planId: dto.planId, deletedAt: undefined })
       .exec();
 
-    const article = await this.articleModel
-      .findOneAndUpdate(
-        { articleId: id, deletedAt: undefined },
-        {
-          ...{ title: dto.title },
-          ...{ content: dto.content },
-          ...{ coverImageUrl: dto.coverImageUrl },
-          ...{ plan: plan },
-        },
-        { returnOriginal: false },
-      )
-      .populate('comments.author')
-      .populate('likes')
-      .populate('author')
-      .exec();
+    article.title = dto.title;
+    article.content = dto.content;
+    article.coverImageUrl = dto.coverImageUrl;
+    article.plan = plan;
 
-    if (!article) {
-      throw new ArticleNotFoundError();
-    }
+    const updatedArticle = await article.save();
 
-    return article;
+    return updatedArticle;
   }
 
   async delete(id: string) {
