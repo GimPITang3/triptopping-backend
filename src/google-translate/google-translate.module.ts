@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { v2 } from '@google-cloud/translate';
 
+import { GoogleTranslateService } from './google-translate.service';
+
 @Module({
   imports: [ConfigModule],
   controllers: [],
@@ -16,7 +18,8 @@ import { v2 } from '@google-cloud/translate';
       },
       inject: [ConfigService],
     },
+    GoogleTranslateService,
   ],
-  exports: [v2.Translate],
+  exports: [v2.Translate, GoogleTranslateService],
 })
 export class GoogleTranslateModule {}
