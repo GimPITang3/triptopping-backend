@@ -74,6 +74,7 @@ export class PlansService {
   async findById(planId: string): Promise<PlanDocument> {
     const plan = await this.plansModel
       .findOne({ planId, deletedAt: undefined })
+      .populate('members')
       .exec();
 
     if (!plan) {
@@ -225,14 +226,19 @@ export class PlansService {
       throw new PlanNotFoundError();
     }
 
-    const users = await this.usersModel
-      .find({
-        userId: { $in: dto.userIds },
+    const user = await this.usersModel
+      .findOne({
+        email: dto.email,
       })
       .exec();
 
-    plan.members = plan.members.addToSet(...users) as Types.DocumentArray<User>;
+    if (!user) {
+      throw new UserNotFoundError();
+    }
 
+    if (plan.members.every((member) => member.userId !== user.userId)) {
+      plan.members.push(user);
+    }
     await plan.save();
 
     return plan;
