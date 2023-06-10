@@ -42,8 +42,16 @@ export class PlansService {
     }
 
     const query = this.plansModel.find({
-      author: user._id,
-      deletedAt: undefined,
+      $or: [
+        {
+          author: user._id,
+          deletedAt: undefined,
+        },
+        {
+          members: user._id,
+          deletedAt: undefined,
+        },
+      ],
     });
 
     const total = await query.clone().count().exec();
