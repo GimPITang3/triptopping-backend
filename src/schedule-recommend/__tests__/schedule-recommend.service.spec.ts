@@ -9,13 +9,20 @@ import { Types } from 'mongoose';
 
 import { Duration } from 'luxon';
 import { LatLngLiteral } from '@googlemaps/google-maps-services-js';
+import { GoogleTranslateModule } from 'src/google-translate/google-translate.module';
+import { OpenaiModule } from 'src/openai/openai.module';
 
 describe('ScheduleRecommendService', () => {
   let service: ScheduleRecommendService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot({}), GoogleMapsModule],
+      imports: [
+        ConfigModule.forRoot({}),
+        GoogleMapsModule,
+        GoogleTranslateModule,
+        OpenaiModule,
+      ],
       providers: [ScheduleRecommendService],
     }).compile();
 
@@ -86,6 +93,7 @@ describe('ScheduleRecommendService', () => {
         tags: ['vacation', 'tokyo'],
         loc: cityLoc,
         period: 3,
+        excludes: [],
         createdAt: new Date(),
         updatedAt: new Date(),
       };
